@@ -17,8 +17,10 @@ LPATH2   = /users/nroth/localcode/lib
 #all: ps22 ps13 ps11real ps13real delta2p_trunc
 #all: delta2p_trunc delta2p_trunc_s0 dtrunc
 #all: dtrunc_opt v2 smo dtrunc_opt3 delta2p
-all: delta2p
-delta2p: delta2part.cpp Makefile /Users/nroth/Projects/code/HDF_IO.hh
+all: dptest
+delta2p: delta2part.cpp Makefile HDF_IO.hh
 	$(CC) $(CFLAGS) -o delta2part -L$(LPATH) -I$(CPATH) delta2part.cpp -ldrfftw -ldfftw -lm -lhdf5 -D H5_USE_16_API -DMAC
+dptest: dp_test.cpp Makefile
+	$(CC) $(CFLAGS) --std=c++0x -o dptest  -L$(LPATH) -I$(CPATH) dp_test.cpp -lm 	
 clean: 
 	rm -rf psxx_fr psxx_half psxy_fr combsm psxx_real psxy_real

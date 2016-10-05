@@ -1,4 +1,5 @@
 import numpy as np
+import time
 #import pynbody
 
 class Kern(object): 
@@ -24,10 +25,13 @@ class Kern(object):
     return value
 
 
-  def unq(self, res, k):
+  def unq(self, res, k, t=False):
 
     ind=0
     arr=np.zeros(res*res*res)
+
+    if t == True:
+        start=time.time()
 
     for i1 in range(-res/2+1, res/2+1):
         p1=k[0]-i1
@@ -46,6 +50,10 @@ class Kern(object):
                 arr[ind]=5*self.h(k[0], k[1], k[2], i1, i2, i3 ) + 5*self.h(k[0], k[1], k[2],  p1, p2, p3 ) + 4*self.f(k[0], k[1], k[2], i1, i2, i3)
                 ind+=1
 
+    if t == True:
+        stop=time.time()
+        print "Seconds passed:", stop-start
+
     uq=np.unique(arr)
 
     return float(len(uq))/res**3
@@ -54,7 +62,7 @@ class Kern(object):
     #return uq
 
 
-def test(res):
+def test(res, t=False):
 
     kern=Kern()
 
@@ -63,9 +71,9 @@ def test(res):
 
     for k1 in range(-res/2+1, res/2+1):
         for k2 in range(-res/2+1, res/2+1):
-            for k3 in range(-res/2+1, res/2+1):
+            for k3 in range(0, res/2+1):
 
-                arr[ind]=kern.unq(res, np.array([k1, k2, k3]) )
+                arr[ind]=kern.unq(res, np.array([k1, k2, k3]), t=t)
                 ind+=1
 
     return arr

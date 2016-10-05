@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <cmath>
+#include <numeric>
+#include <vector>
 #include <iostream>
 #include <iomanip>
 #include <fstream>
