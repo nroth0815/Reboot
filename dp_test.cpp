@@ -27,18 +27,19 @@ double dp_exp(vector<double> v1, vector<double> v2){
 
 int main() {
 
-	double vv1[3] = { 1, 2, 3 };
+	double vv1[3] = { 5, 2, 3 };
     double vv2[3] = { 4, 6, 8 };
 
 	vector<double> v1 (begin(vv1), end(vv1));
     vector<double> v2 (begin(vv2), end(vv2));
-    double res1, res2;
+    double res1=0., res2=0.;
 
-	//for (int j=0; j<10000; j++){
+	for (int j=0; j<1000000; j++){
 		res1=dp(v1, v2);
-		res2=dp_exp(v1, v2);
-	//	v1[0]+=1.;
-	//}
+		v1[0]+=1.;
+		//res2=dp_exp(v1, v2);
+		
+	}
 
 
 	cout<< res1 << " " << res2<< endl;

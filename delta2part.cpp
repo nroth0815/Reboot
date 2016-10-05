@@ -310,6 +310,9 @@ int main(int argc, char *argv[]){
 			f=F(ik,jk,lk,iq1,jq1,lq1);
 			h1=H(ik,jk,lk,iq1,jq1,lq1);
 			h2=H(ik,jk,lk,inq2,jnq2,lnq2);
+			f+=1;
+			h1+=1;
+			h2+=1;
 
 			d1re=(double)ft[idq1].re;
 			d2re=(double)ft[idq2].re;
