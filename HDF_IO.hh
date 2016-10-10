@@ -7,8 +7,11 @@
 #include <sstream>
 #include <typeinfo>
 #include <vector>
+#ifdef MAC
 #include "/usr/local/include/hdf5.h"
-//include "/users/nroth/localcode/include/hdf5.h"
+#else
+#include "/users/nroth/localcode/include/hdf5.h"
+#endif
 
 template<typename T>
 hid_t GetDataType( void )

@@ -6,12 +6,12 @@
 #include <iostream>
 #include <iomanip>
 #include <fstream>
+#include <sys/time.h>
 #ifdef MAC 
 #include <mach/error.h>
 #else
 #include <error.h>
 #endif
-#include <time.h>
 using namespace std;
 
 #include <rfftw.h>
@@ -317,9 +317,18 @@ int main(int argc, char *argv[]){
 	clock_t t0,t1;
 
 	//idstopn=res*res*res;//idstart+10;
-	//t0= time(NULL);
-	 // t0=MPI_Wtime();
-	t0 = clock();
+
+	t0=clock();
+
+	  //t0=MPI_Wtime();
+	idq1=0;
+
+	int lowi, lowj, lowl, hii, hij, hil, r2=res/2;
+	int sum=0;
+
+	int iiq1, jjq1, llq1;
+
+	//cout << 
 
 	for(id=idstart;id<idstopn;id++){
 		ik=karr[id*4];
@@ -329,27 +338,40 @@ int main(int argc, char *argv[]){
 
 		
 		//t0 = second();
+
+		lowi=max(ik-r2, -r2+1);
+		lowj=max(jk-r2, -r2+1);
+		lowl=max(lk-r2, -r2+1);
 		
-		for(idq1=0;idq1<res*res*res;idq1++){
-			
-			iq1=qarr[idq1*3];
-			jq1=qarr[idq1*3+1];
-			lq1=qarr[idq1*3+2];
 
-			//iq2=ik-iq1; if(iq2<-(res/2) ){inq2=res+iq2;} else if(iq2>res/2){inq2=iq2-res;} else{inq2=iq2;}
-			//jq2=jk-jq1; if(jq2<-(res/2) ){jnq2=res+jq2;} else if(jq2>res/2){jnq2=jq2-res;} else{jnq2=jq2;}
-			//lq2=lk-lq1; if(lq2<-(res/2) ){lnq2=res+lq2;} else if(lq2>res/2){lnq2=lq2-res;} else{lnq2=lq2;}
+		hii=min(ik+r2, r2);
+		hij=min(jk+r2, r2);
+		hil=min(lk+r2, r2);
 
-			iq2=ik-iq1; if(iq2<-(res/2) ){continue;} else if(iq2>res/2){continue;} else{inq2=iq2;}
-			jq2=jk-jq1; if(jq2<-(res/2) ){continue;} else if(jq2>res/2){continue;} else{jnq2=jq2;}
-			lq2=lk-lq1; if(lq2<-(res/2) ){continue;} else if(lq2>res/2){continue;} else{lnq2=lq2;}
+		sum=0;
 
+		for(iq1 = lowi; iq1<hii; iq1++){
+			for(jq1 = lowj; jq1<hij; jq1++){
+				for(lq1 = lowl; lq1<hil; lq1++){
+
+					sum+=1;
+
+			inq2=ik-iq1; //if(iq2<-(res/2) ){cout << "'1'" << endl; continue;} else if(iq2>res/2){cout << "'2'" << endl; continue;} else{inq2=iq2; cout << "iq2: "<< iq2 << endl;}
+			jnq2=jk-jq1; //if(jq2<-(res/2) ){cout << "'3'" << endl; continue;} else if(jq2>res/2){cout << "'4'" << endl; continue;} else{jnq2=jq2;}
+			lnq2=lk-lq1; //if(lq2<-(res/2) ){cout << "'5'" << endl; continue;} else if(lq2>res/2){cout << "'6'" << endl; continue;} else{lnq2=lq2;}
+
+			if(iq1<0){iiq1=res+iq1;}else{iiq1=iq1;}
+			if(jq1<0){jjq1=res+jq1;}else{jjq1=jq1;}
+			if(lq1<0){llq1=res+lq1;}else{llq1=lq1;}
+			idq1=(iiq1*res+jjq1)*res+llq1;
 
 			if(inq2<0){iiq2=res+inq2;}else{iiq2=inq2;}
 			if(jnq2<0){jjq2=res+jnq2;}else{jjq2=jnq2;}
 			if(lnq2<0){llq2=res+lnq2;}else{llq2=lnq2;}		
 
 			idq2=(iiq2*res+jjq2)*res+llq2;
+
+			//idq1-=1;
 
 				//kernels
 			//f=F(ik,jk,lk,iq1,jq1,lq1);
@@ -385,6 +407,9 @@ int main(int argc, char *argv[]){
 			//v2[idk].im+=(float)(5.*(h1*A+h2*B)+4.*f*C)/14.;	
 
 		}
+		}
+		}
+		
 
 					//t1 = second();
 
@@ -392,10 +417,9 @@ int main(int argc, char *argv[]){
 
 	}
 	
-	
+	t1 = clock();//time(NULL);
 	//t1=MPI_Wtime();
-	//t1 = time(NULL);
-	t1 = clock();
+	
 
 	cerr<<"loop done"<<endl;
 
