@@ -14,10 +14,11 @@
 #include <time.h>
 using namespace std;
 
-#include <rfftw.h>
 #ifdef MAC
 #include "/Users/nroth/Projects/code/HDF_IO.hh"
-//#else
+#include <srfftw.h>
+#else
+#include <rfftw.h>
 //#include "HDF_IO.hh"
 #endif
 

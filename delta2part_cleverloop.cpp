@@ -14,10 +14,11 @@
 #endif
 using namespace std;
 
-#include <rfftw.h>
 #ifdef MAC
+#include <srfftw.h>
 #include "/Users/nroth/Projects/code/HDF_IO.hh"
-//#else
+#else
+#include <rfftw.h>
 //#include "HDF_IO.hh"
 #endif
 
@@ -383,6 +384,7 @@ int main(int argc, char *argv[]){
 			// h2+=1;
 
 			f=kernel(iq1,jq1,lq1, inq2, jnq2, lnq2);
+			//f=ft[idq1].re;
 			h1=f;
 			h2=f;
 			f+=1;
