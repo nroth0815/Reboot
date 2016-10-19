@@ -20,56 +20,25 @@ using namespace std;
 //#include "HDF_IO.hh"
 #endif
 
+//#include unordered_map
 
 
-// double table[10][10][2];
+// void test_map(){
 
-// //make "table" a class with load functions etc?
+// 	typedef std::tr1::unordered_map< std::string, int > hashmap;
+//     hashmap numbers;
 
-// bool table_check(size_t i){
+//     numbers["one"] = 1;
+//     numbers["two"] = 2;
+//     numbers["three"] = 3;
 
-// 	return true;
-// }
-
-
-// void create_table(size_t res){
-
-// 	size_t i;
-// 	for(i=0; i< res*res*res; i++){
-
-// 		if(!table_check(i)){calc_table(i);} //check if value is in table
-
-
-// 	}
-
+//     std::tr1::hash< std::string > hashfunc = numbers.hash_function();
+//     for( hashmap::const_iterator i = numbers.begin(), e = numbers.end() ; i != e ; ++i ) {
+//         std::cout << i->first << " -> " << i->second << " (hash = " << hashfunc( i->first ) << ")" << std::endl;
+//     }
 
 // }
 
-// void load_table(string filename){
-
-
-// }
-
-// void save_table(string filename){
-
-// }
-
-// double get_alpha(size_t idq, size_t idp){
-
-
-// 	double alpha=table[idq][idp][0];
-
-// 	return alpha;
-
-// }
-
-// double get_beta(size_t idq, size_t idp){
-
-// 	double beta=table[idq][idp][1];
-
-// 	return beta;
-
-// }
 
 int Ps(int res, double Boxlength, int nBins, fftw_complex *ft, const char *out){
 
@@ -288,6 +257,9 @@ return value; //gives correct values compared with mathematica
 int main(int argc, char *argv[]){
 	
 	if(argc!=7){cerr<< "Usage: ./delta2part inputfile res <smoothing scale> <'IC' or 'z0'> Boxsize <part no (0: all, or 1-8)>" <<endl; return -1;}
+
+
+	//test_map();
 
 	string arg0=argv[0];
 	string argv2=argv[2];

@@ -23,8 +23,10 @@ LPATH3 = /users/nroth/localcode/fftw/lib
 #all: delta2p_trunc delta2p_trunc_s0 dtrunc
 #all: dtrunc_opt v2 smo dtrunc_opt3 delta2p
 
-all: delta2p delta2pclv
+all: delta2p delta2pclv hm
 #all: MACdelta2p MACdelta2pclv
+hm: hash_test.cpp Makefile
+	$(CC) $(CFLAGS) -std=c++11 -o hash_test hash_test.cpp -lm 
 delta2p: delta2part.cpp Makefile
 	$(CC) $(CFLAGS) -o delta2part -L$(LPATH2) -I$(CPATH2) delta2part.cpp -lrfftw -lfftw -lm -lhdf5 -D H5_USE_16_API
 delta2pclv: delta2part_cleverloop.cpp Makefile
