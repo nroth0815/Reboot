@@ -2,8 +2,7 @@
 #include <string>
 #include <iostream>
 #include <boost/functional/hash.hpp> //better hash libraries (for later)
-
-//using namespace std;
+#include "hash_temp.hpp" //contains Key and Keyhasher*
 
 struct pair_hash {
     template <class T1, class T2>
@@ -19,126 +18,126 @@ struct pair_hash {
 
 void test_map(){
 
-	//typedef tr1::unordered_map< pair<int, int>, int, pair_hash> hashmap;
-    typedef std::unordered_map< std::string, int> hashmap;
+	typedef std::unordered_map< std::string, int> hashmap;
     hashmap numbers;
-
-    //numbers[0]=1;
-    //numbers[2]=-1;
 
     numbers["one"] = 1;
     numbers["two"] = 2;
     numbers["three"] = 3;
 
-    //numbers[{0,0}]=1;
-    //numbers[{1,0}]=2;
-
-    //tr1::hash< int > hashfunc = numbers.hash_function();
     std::hash< std::string > hashfunc = numbers.hash_function();
-    //tr1::hash< pair<int, int> > hashfunc = numbers.hash_function();
     for( hashmap::const_iterator i = numbers.begin(), e = numbers.end() ; i != e ; ++i ) {
-        //cout << i << endl;
         std::cout << i->first << " -> " << i->second << " (hash = " << hashfunc( i->first ) << ")" << std::endl;
-        //cout << i->first << " -> " << i->second << endl;//" (hash = " << pair_hash( i->first ) << ")" << endl;
     }
+    std::cout<< std::endl;
 
 }
 
-struct Key
-{
-  int first; //key has two components: both integers
-  int second;
+// struct Key
+// {
+//   int idq; //key has two components: both integers
+//   int idp;
 
-  bool operator==(const Key &other) const //self-defined comparison operator for our structure
-  { return (first == other.first
-            && second == other.second);
-  }
-};
+//   bool operator==(const Key &other) const //self-defined comparison operator for our structure
+//   { return (idq == other.idq
+//             && idp == other.idp);
+//   }
+// };
 
-namespace std { //adds the following to the standard namespace?
+// struct KeyHasher //the actual hash calculation
+// {
+//   std::size_t operator()(const Key& k) const
+//   {
+//     using std::size_t;
+//     using std::hash;
 
-  template <>
-  struct hash<Key>
-  {
-    std::size_t operator()(const Key& k) const
-    {
-      using std::size_t;
-      using std::hash;
-      //using std::int;
+//     return (hash<int>()(k.idq)
+//              ^ (hash<int>()(k.idp) << 1)) >> 1;
+//     // Mainly for demonstration purposes, i.e. works but is overly simple
+//     // In the real world, use sth. like boost.hash_combine
+//   }
+// };
 
-      // Compute individual hash values for first and
-      // second and combine them using XOR
-      // and bit shifting: (to avoid collisions)
+// struct KeyHasher_mod //the actual hash calculation
+// {
+//   std::size_t operator()(const Key& k) const
+//   {
+//     using std::size_t;
+//     using std::hash;
+//     std::size_t seed=0;
 
-      return (hash<int>()(k.first)
-               ^ (hash<int>()(k.second) << 1)) >> 1;
-    }
-  };
+//     boost::hash_combine(seed, k.idq);
+//     boost::hash_combine(seed, k.idp);
 
-}
-
-struct KeyHasher
-{
-  std::size_t operator()(const Key& k) const
-  {
-    using std::size_t;
-    using std::hash;
-    //using std::string;
-
-    return (hash<int>()(k.first)
-             ^ (hash<int>()(k.second) << 1)) >> 1;
-  }
-};
+//     return seed;
+  
+//   }
+// };
 
 void test_2d(){
 
-    //typedef tr1::unordered_map< pair<int, int>, int, pair_hash> hashmap;
     typedef std::unordered_map< Key, int , KeyHasher> hashmap;
     hashmap numbers;
 
-    //numbers[0]=1;
-    //numbers[2]=-1;
-
-    //numbers["one"] = 1;
-    //numbers["two"] = 2;
-    //numbers["three"] = 3;
-
     numbers[{0,0}]=1;
     numbers[{1,0}]=2;
+    numbers[{1243,230}]=-2;
 
     std::cout << numbers[{0,0}]<< std::endl;
 
-    //tr1::hash< int > hashfunc = numbers.hash_function();
-    // tr1::hash< string > hashfunc = numbers.hash_function();
-    //tr1::hash< Key > hashfunc = numbers.hash_function();
+    hashmap::hasher hashfunc= numbers.hash_function();
     for( hashmap::const_iterator i = numbers.begin(), e = numbers.end() ; i != e ; ++i ) {
-         std::cout << i->first.first << " " << i->first.second << std::endl;//" (hash = " << hashfunc( i->first ) << ")"  << endl;
-    //     cout << i->first << " -> " << i->second << " (hash = " << hashfunc( i->first ) << ")" << endl;
-    //     //cout << i->first << " -> " << i->second << endl;//" (hash = " << pair_hash( i->first ) << ")" << endl;
-     }
+         std::cout << i->first.idq << ", " << i->first.idp << " -> "<< i->second << "; (hash = " << hashfunc( i->first ) << ")"  << std::endl;
+    }
 
 
-     std::cout << "now to find items: "<< std::endl;
+    std::cout << "now to find items: "<< std::endl;
     //find items:
     //auto: deduces variable type from its initialiser, in this case: an iterator (new in c++11 standard)
     auto iter= numbers.find({0,0}); //this will throw an exception if key doesn't exist
-    std::cout << iter->first.first << " " << iter->first.second << " " <<  iter->second << std::endl;
+    std::cout << iter->first.idq << " " << iter->first.idp << " " <<  iter->second << std::endl;
 
-    //auto outp = numbers.at({1,0}); //returns the value directly; this will throw an exception if key doesn't exist
-    //std::cout << outp << std::endl;
+    auto outp = numbers.at({1,0}); //returns the value directly; this will throw an exception if key doesn't exist
+    std::cout << outp << std::endl;
+    std::cout<< std::endl;
+
+}
+
+void test_2d_mod(){
+
+    typedef std::unordered_map< Key, int , KeyHasher_mod> hashmap;
+    hashmap numbers;
+
+    numbers[{0,0}]=1;
+    numbers[{1,0}]=2;
+    numbers[{1243,230}]=-2;
+
+    std::cout << numbers[{0,0}]<< std::endl;
+
+    hashmap::hasher hashfunc= numbers.hash_function();
+    for( hashmap::const_iterator i = numbers.begin(), e = numbers.end() ; i != e ; ++i ) {
+         std::cout << i->first.idq << ", " << i->first.idp << " -> "<< i->second << "; (hash = " << hashfunc( i->first ) << ")"  << std::endl;
+    }
 
 
+    std::cout << "now to find items: "<< std::endl;
+    //find items:
+    //auto: deduces variable type from its initialiser, in this case: an iterator (new in c++11 standard)
+    auto iter= numbers.find({0,0}); //this will throw an exception if key doesn't exist
+    std::cout << iter->first.idq << " " << iter->first.idp << " " <<  iter->second << std::endl;
+
+    auto outp = numbers.at({1,0}); //returns the value directly; this will throw an exception if key doesn't exist
+    std::cout << outp << std::endl;
+    std::cout<< std::endl;
 
 }
 
 int main(){
 
-
 	test_map();
-
     test_2d();
+    test_2d_mod();
 
 	return 0;
-
 
 }
