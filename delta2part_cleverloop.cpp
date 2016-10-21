@@ -37,8 +37,10 @@ typedef double MyFloat;
 typedef float MyFloat;
 #endif
 
-template <typename ClassTo> 
-int Save(const string fname, const ClassTo &c) 
+typedef std::unordered_map< Key, ab, KeyHasher_mod> hashmap;
+
+//template <typename ClassTo> 
+int Save(const string fname, hashmap &c)// const ClassTo &c) 
 { 
     ofstream f(fname.c_str(), ios::binary);
     if (f.fail()) return -1;
@@ -287,7 +289,7 @@ int main(int argc, char *argv[]){
 	}
 
 
-	typedef std::unordered_map< Key, ab, KeyHasher_mod> hashmap;
+	
     hashmap numbers;
 
 	cerr<<"beginning loop"<<endl;
@@ -374,8 +376,10 @@ int main(int argc, char *argv[]){
 	
 	t1 = clock();//time(NULL);
 	//t1=MPI_Wtime();
-	
-	Save< std::unordered_map<Key, ab> >("test.map", numbers); 
+	int sved=-2;
+	//sved=Save< std::unordered_map<Key, ab> >(string("test.map"), numbers); 
+	sved=Save(string("test.map"), numbers); 
+	cout << "saved? " << sved<< endl;
 
 	cerr<<"loop done"<<endl;
 
