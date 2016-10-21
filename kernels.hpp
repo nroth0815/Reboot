@@ -13,6 +13,26 @@ typedef double MyFloat;
 typedef float MyFloat;
 #endif
 
+#include <boost/functional/hash.hpp>
+#include <boost/archive/binary_oarchive.hpp> 
+#include <boost/archive/binary_iarchive.hpp> 
+#include <boost/serialization/map.hpp> 
+
+
+struct ab{
+
+    MyFloat alpha;
+    MyFloat beta;
+
+private: //to use the archiving (save/load) function of boost:
+    friend class boost::serialization::access; 
+    template <typename Archive> void serialize(Archive &ar, const unsigned int version) { 
+        ar & alpha; 
+        ar & beta;
+    } 
+
+};
+
 MyFloat alpha(int q1, int q2, int q3, int p1, int p2, int p3){
 	
 	int modp=p1*p1+p2*p2+p3*p3;
@@ -39,7 +59,7 @@ MyFloat beta(int q1, int q2, int q3, int p1, int p2, int p3){
 		invp = 1.0/modp;
 		value= qp * (invq + invp + 2.0*qp*invq*invp)/2.0;
 	}
-	
+
 	return value;
 }
 

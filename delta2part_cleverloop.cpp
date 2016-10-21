@@ -9,6 +9,16 @@
 #include <sys/time.h>
 #include "kernels.hpp"
 
+
+#include <chrono>
+#include <unordered_map>
+#include <boost/functional/hash.hpp> //better hash libraries (for later)
+#include "hash_temp.hpp" //contains Key and Keyhasher*
+
+#include <boost/archive/binary_oarchive.hpp> 
+#include <boost/archive/binary_iarchive.hpp> 
+#include <boost/serialization/map.hpp> 
+
 using namespace std;
 
 #ifdef MAC
@@ -27,6 +37,15 @@ typedef double MyFloat;
 typedef float MyFloat;
 #endif
 
+template <typename ClassTo> 
+int Save(const string fname, const ClassTo &c) 
+{ 
+    ofstream f(fname.c_str(), ios::binary);
+    if (f.fail()) return -1;
+    boost::archive::binary_oarchive oa(f); 
+    oa << c; 
+    return 0;
+}
 
 int Ps(int res, MyFloat Boxlength, int nBins, fftw_complex *ft, const char *out){
 
@@ -150,74 +169,6 @@ fftw_complex *Smooth(const char *Outputfile, const char *Outputfile2, int res, f
 		return deltaw;
 	}			 
 
-MyFloat Fnew(int q1, int q2, int q3, int p1, int p2, int p3){ //this takes k1, k2, not k=k1+k2
-
-		MyFloat eps=1e-7,value=0.,modq,modp,qp;//, moddiff;
-
-		modq=(MyFloat)(q1*q1+q2*q2+q3*q3);
-		modp=(MyFloat)(p1*p1+p2*p2+p3*p3);
-		//moddiff=(MyFloat)(diff1*diff1+diff2*diff2+diff3*diff3);
-
-		qp=(MyFloat)(q1*p1+q2*p2+q3*p3);
-
-
-		value=2./7*qp*qp/(modq+eps)/(modp+eps)+1./2*qp*(1./(modq+eps)+1./(modp+eps)) ;
-		//1./2.*modq/(modp+eps)*(MyFloat)(p1*diff1+p2*diff2+p3*diff3)/(moddiff+eps);
-
-return value; //gives correct values compared with mathematica
-}
-
-MyFloat kernel(int q1, int q2, int q3, int p1, int p2, int p3){ //this takes k1, k2, not k=k1+k2
-
-		MyFloat eps=1e-7,value=0.,modq,modp,qp;//, moddiff;
-
-		modq=(MyFloat)(q1*q1+q2*q2+q3*q3);
-		modp=(MyFloat)(p1*p1+p2*p2+p3*p3);
-		//moddiff=(MyFloat)(diff1*diff1+diff2*diff2+diff3*diff3);
-
-		qp=(MyFloat)(q1*p1+q2*p2+q3*p3);
-
-
-		value=5./7+2./7*qp*qp/(modq+eps)/(modp+eps)+1./2*qp*(1./(modq+eps)+1./(modp+eps)) ;
-		//1./2.*modq/(modp+eps)*(MyFloat)(p1*diff1+p2*diff2+p3*diff3)/(moddiff+eps);
-
-return value; 
-}
-
-MyFloat F(int q1, int q2, int q3, int p1, int p2, int p3){
-
-		MyFloat eps=1e-16,value=0.,modq,modp,moddiff;
-
-		int diff1=(q1-p1);
-		int diff2=(q2-p2);
-		int diff3=(q3-p3);
-
-		modq=(MyFloat)(q1*q1+q2*q2+q3*q3);
-		modp=(MyFloat)(p1*p1+p2*p2+p3*p3);
-		moddiff=(MyFloat)(diff1*diff1+diff2*diff2+diff3*diff3);
-
-		//qp=(MyFloat)(q1*p1+q2*p2+q3*p3);
-
-
-		value=1./2.*modq/(modp+eps)*(MyFloat)(p1*diff1+p2*diff2+p3*diff3)/(moddiff+eps);
-
-return value; //gives correct values compared with mathematica
-}
-
-MyFloat H(int q1, int q2, int q3, int p1, int p2, int p3){
-	
-	MyFloat eps=1e-16,value=0.,modp,qp;
-	
-	modp=(MyFloat)(p1*p1+p2*p2+p3*p3);
-
-	qp=(MyFloat)(q1*p1+q2*p2+q3*p3);
-
-	value=qp/(MyFloat)(modp+eps); 
-
-
-return value; //gives correct values compared with mathematica
-}
-
 int main(int argc, char *argv[]){
 	
 	if(argc!=7){cerr<< "Usage: ./delta2part inputfile res <smoothing scale> <'IC' or 'z0'> Boxsize <part no (0: all, or 1-8)>" <<endl; return -1;}
@@ -241,7 +192,7 @@ int main(int argc, char *argv[]){
 	MyFloat R=atof(argv[3]);	
 	MyFloat Boxsize=atof(argv[5]);
 	
-	MyFloat d1re, d2re, d1im, d2im,f=0.,h1=0.,h2=0.,A=0.,B=0.,C=0.;
+	MyFloat d1re, d2re, d1im, d2im,f=0., h1=0., h2=0., A=0., B=0.;
 
 	fftw_complex *v2=(fftw_complex*)calloc(res*res*res,sizeof(fftw_complex));
 
@@ -336,6 +287,9 @@ int main(int argc, char *argv[]){
 	}
 
 
+	typedef std::unordered_map< Key, ab, KeyHasher_mod> hashmap;
+    hashmap numbers;
+
 	cerr<<"beginning loop"<<endl;
 
 	int lowi, lowj, lowl, hii, hij, hil;
@@ -380,13 +334,19 @@ int main(int argc, char *argv[]){
 			idq2=(iiq2*res+jjq2)*res+llq2;
 
 			//kernels:
-			//f=F(ik,jk,lk,iq1,jq1,lq1);
-			f=beta(iq1,jq1,lq1,inq2,jnq2,lnq2);
+			// //f=F(ik,jk,lk,iq1,jq1,lq1);
+			 f=beta(iq1,jq1,lq1,inq2,jnq2,lnq2);
 	
-			//h1=H(ik,jk,lk,iq1,jq1,lq1);
-			//h2=H(ik,jk,lk,inq2,jnq2,lnq2);
-			h1=alpha(ik,jk,lk,iq1,jq1,lq1);
-			h2=alpha(ik,jk,lk,inq2,jnq2,lnq2);
+			// //h1=H(ik,jk,lk,iq1,jq1,lq1);
+			// //h2=H(ik,jk,lk,inq2,jnq2,lnq2);
+			 h1=alpha(ik,jk,lk,iq1,jq1,lq1);
+			 h2=alpha(ik,jk,lk,inq2,jnq2,lnq2);
+
+			numbers[{idq1, idq2}]=(ab){h1, f};
+			//h1=numbers.at({idq1, idq2}).alpha;
+			//h2=numbers.at({idq1, idq2}).alpha;
+			//f=numbers.at({idq1, idq2}).beta;
+
 
 			d1re=(MyFloat)ft[idq1].re;
 			d2re=(MyFloat)ft[idq2].re;
@@ -415,6 +375,7 @@ int main(int argc, char *argv[]){
 	t1 = clock();//time(NULL);
 	//t1=MPI_Wtime();
 	
+	Save< std::unordered_map<Key, ab> >("test.map", numbers); 
 
 	cerr<<"loop done"<<endl;
 

@@ -1,4 +1,7 @@
 #include <boost/functional/hash.hpp>
+#include <boost/archive/binary_oarchive.hpp> 
+#include <boost/archive/binary_iarchive.hpp> 
+#include <boost/serialization/map.hpp> 
 
 struct Key
 {
@@ -9,6 +12,14 @@ struct Key
   { return (idq == other.idq
             && idp == other.idp);
   }
+
+private: //to use the archiving (save/load) function of boost:
+    friend class boost::serialization::access; 
+    template <typename Archive> void serialize(Archive &ar, const unsigned int version) { 
+        ar & idq; 
+        ar & idp;
+    } 
+
 };
 
 struct KeyHasher //the actual hash calculation
