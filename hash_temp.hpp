@@ -2,8 +2,8 @@
 
 struct Key
 {
-  int idq; //key has two components: both integers
-  int idp;
+  size_t idq; //key has two components: both integers
+  size_t idp;
 
   bool operator==(const Key &other) const //self-defined comparison operator for our structure
   { return (idq == other.idq
@@ -18,8 +18,8 @@ struct KeyHasher //the actual hash calculation
     using std::size_t;
     using std::hash;
 
-    return (hash<int>()(k.idq)
-             ^ (hash<int>()(k.idp) << 1)) >> 1;
+    return (hash<size_t>()(k.idq)
+             ^ (hash<size_t>()(k.idp) << 1)) >> 1;
     // Mainly for demonstration purposes, i.e. works but is overly simple
     // In the real world, use sth. like boost.hash_combine
   }
