@@ -218,36 +218,9 @@ MyFloat H(int q1, int q2, int q3, int p1, int p2, int p3){
 return value; //gives correct values compared with mathematica
 }
 
-// void buffer(MyFloat *v2, MyFloat *ftw){
-
-
-
-
-//         //get v2 from file
-//         ifstream v2str(v2file.c_str());
-//         if (v2str.fail()) {
-//         cerr << "unable to open file "<<v2file.c_str()<< " for reading" << endl;
-//         exit(1);
-//         }
-//         for(i=0;i<res*res*res*2;i++){v2str>>in[i];}
-//         v2str.close();
-
-//         for(i=0;i<res*res*res;i++){ftw[i].re=in[2*i]; ftw[i].im=in[2*i+1];} //works
-//         free(in);
-
-
-//     return v2;
-
-
-// }
-
-
 int main(int argc, char *argv[]){
 	
 	if(argc!=7){cerr<< "Usage: ./delta2part inputfile res <smoothing scale> <'IC' or 'z0'> Boxsize <part no (0: all, or 1-8)>" <<endl; return -1;}
-
-
-	//test_map();
 
 	string arg0=argv[0];
 	string argv2=argv[2];
@@ -342,8 +315,6 @@ int main(int argc, char *argv[]){
 				idk=(ii*(res)+jj)*(res)+l;		
 				
 				karr[4*index]=iq; karr[4*index+1]=j; karr[4*index+2]=l; karr[4*index+3]=idk;
-				//if(idk > 0 && idk < 20)
-				//cout << index <<  " "<< karr[4*index] << " "  << karr[4*index+1] << " "  << karr[4*index+2] <<" "  << karr[4*index+3] << endl;
 				index+=1;
 
 			}
@@ -358,46 +329,26 @@ int main(int argc, char *argv[]){
 			for(l=-(r2-1);l<r2+1;l++){
 				if(l<0){ll=res+l;}else{ll=l;}
 				
-				idk=(ii*(res)+jj)*(res)+ll;
-				
+				idk=(ii*(res)+jj)*(res)+ll;				
 				qarr[3*idk]=iq; qarr[3*idk+1]=j; qarr[3*idk+2]=l; 
 			}
 		}
 	}
 
-	
-
-	//size_t i;
-	//MyFloat t1,t0;
 
 	cerr<<"beginning loop"<<endl;
 
-	clock_t t0,t1;
-
-	//idstopn=res*res*res;//idstart+10;
-
-	t0=clock();
-
-	//t0=MPI_Wtime();
-	
 	int lowi, lowj, lowl, hii, hij, hil;
-	//int sum=0;
-
 	int iiq1, jjq1, llq1;
-	MyFloat fk;
 
-	//cout << 
+	clock_t t0,t1;
+	t0=clock();
 
 	for(id=idstart;id<idstopn;id++){
 		ik=karr[id*4];
 		jk=karr[id*4+1];
 		lk=karr[4*id+2];
 		idk=karr[4*id+3];
-
-		//cout << endl;
-		//cout << id << " " << ik << " " << jk << " " << lk << " " << idk <<endl;
-
-		//t0 = second();
 
 		lowi=max(ik-r2, -r2+1);
 		lowj=max(jk-r2, -r2+1);
@@ -407,17 +358,15 @@ int main(int argc, char *argv[]){
 		hij=min(jk+r2, r2);
 		hil=min(lk+r2, r2);
 
-		//sum=0;
-
 		for(iq1 = lowi; iq1<hii; iq1++){
 			for(jq1 = lowj; jq1<hij; jq1++){
 				for(lq1 = lowl; lq1<hil; lq1++){			
 
-				//	sum+=1;
 
-			inq2=ik-iq1; //if(iq2<-(res/2) ){cout << "'1'" << endl; continue;} else if(iq2>res/2){cout << "'2'" << endl; continue;} else{inq2=iq2; cout << "iq2: "<< iq2 << endl;}
-			jnq2=jk-jq1; //if(jq2<-(res/2) ){cout << "'3'" << endl; continue;} else if(jq2>res/2){cout << "'4'" << endl; continue;} else{jnq2=jq2;}
-			lnq2=lk-lq1; //if(lq2<-(res/2) ){cout << "'5'" << endl; continue;} else if(lq2>res/2){cout << "'6'" << endl; continue;} else{lnq2=lq2;}
+
+			inq2=ik-iq1; 
+			jnq2=jk-jq1; 
+			lnq2=lk-lq1; 
 
 			if(iq1<0){iiq1=res+iq1;}else{iiq1=iq1;}
 			if(jq1<0){jjq1=res+jq1;}else{jjq1=jq1;}
@@ -430,51 +379,27 @@ int main(int argc, char *argv[]){
 
 			idq2=(iiq2*res+jjq2)*res+llq2;
 
-			//idq1-=1;
-
-				//kernels
-			 //f=F(ik,jk,lk,iq1,jq1,lq1);
-			 f=beta(iq1,jq1,lq1,inq2,jnq2,lnq2);
-			 //f=F(ik,jk,lk,iq1,jq1,lq1);
+			//kernels:
+			//f=F(ik,jk,lk,iq1,jq1,lq1);
+			f=beta(iq1,jq1,lq1,inq2,jnq2,lnq2);
 	
-			 //f=Fnew(iq1,jq1,lq1, inq2, jnq2, lnq2);
-			 //h1=H(ik,jk,lk,iq1,jq1,lq1);
-			 //h2=H(ik,jk,lk,inq2,jnq2,lnq2);
-			 h1=alpha(ik,jk,lk,iq1,jq1,lq1);
-			 h2=alpha(ik,jk,lk,inq2,jnq2,lnq2);
-			//if(abs(f-fk)>1e-6){cout<<setprecision(10) << f<< " " << fk << endl;}
-			// f+=1;
-			// h1+=1;
-			// h2+=1;
-
-			//fk=kernel(iq1,jq1,lq1, inq2, jnq2, lnq2);
-			
-			//if (abs(fk-(5.*(h1+h2)+4.*f)/14. > 1e-7)){
-			//	cout << iq1 << " " << jq1 << " " << lq1 << " |(  " << (5.*(h1+h2)+4.*f)/14. <<  ", "<< fk << " ) | "<< idq1 << " "<< idq2 << " | " << ft[idq1].re << " " << ft[idq1].im << " " << ft[idq2].re << " "<< ft[idq2].im << endl;
-			//}
+			//h1=H(ik,jk,lk,iq1,jq1,lq1);
+			//h2=H(ik,jk,lk,inq2,jnq2,lnq2);
+			h1=alpha(ik,jk,lk,iq1,jq1,lq1);
+			h2=alpha(ik,jk,lk,inq2,jnq2,lnq2);
 
 			d1re=(MyFloat)ft[idq1].re;
 			d2re=(MyFloat)ft[idq2].re;
 			d1im=(MyFloat)ft[idq1].im;
 			d2im=(MyFloat)ft[idq2].im;
 
-
 			A=d2re*d1re-d2im*d1im;
-			//B=d1re*d2re-d1im*d2im;
-			//C=d1re*d2re-d1im*d2im;
-
-			//v2[idk].re+=(MyFloat)(fk*A);
 			v2[idk].re+=(MyFloat)(5.*(h1*A+h2*A)+4.*f*A)/14.;
 
 			B=d2re*d1im+d1re*d2im;
-			//B=d1re*d2im+d1im*d2re;
-			//C=d1re*d2im+d1im*d2re;
-
-			//v2[idk].im+=(MyFloat)(fk*B);
 			v2[idk].im+=(MyFloat)(5.*(h1*B+h2*B)+4.*f*B)/14.;	
 
-			//if(idk == 20 ){ cout<<setprecision(20) << idk <<  " " << f - fk <<  " "<< f << " " <<fk <<  endl;}//" "<< A << " " << B <<  " "<< (5.*(h1*A+h2*A)+4.*f*A)/14 << " " << (5.*(h1*B+h2*B)+4.*f*B)/14 << endl; }
-
+			
 			
 		}
 		}
@@ -505,7 +430,7 @@ int main(int argc, char *argv[]){
 		v2[(r2*res+r2)*res].im=0;
 		v2[(r2*res+r2)*res+r2].im=0;
 
-		for(index=0;index<idstop;index++){
+		for(index=1;index<idstop;index++){ //index=0 is dealt with below
 
 			ik=karr[index*4];
 			jk=karr[index*4+1];
@@ -517,12 +442,6 @@ int main(int argc, char *argv[]){
 			if(j<0){jj=res+j;}else{jj=j;}
 			if(l<0){ll=res+l;}else{ll=l;}
 			idknew=(ii*res+jj)*res+ll;
-
-			//if(idk==0||idk==(int)(r2)||idk==r2*res||idk==res*r2+r2||idk==r2*res*res||idk==r2*res*res+r2||idk==(r2*res+r2)*res||idk==(r2*res+r2)*res+r2){//cerr<<ik<<" "<<jk<<" "<<lk<<endl; 
-				//v2[idknew].im=0;}
-			//else{//continue;
-			//v2[idk].re/=1e16;
-			//v2[idk].im/=1e16;
 
 			v2[idknew].re=v2[idk].re;
 			v2[idknew].im=-v2[idk].im;
