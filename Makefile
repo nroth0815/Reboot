@@ -32,7 +32,7 @@ hm: hash_test.cpp hash_temp.hpp Makefile
 	$(CC) $(CFLAGS) -std=c++11 hash_temp.hpp -o hash_test hash_test.cpp -lm 
 delta2p: delta2part.cpp Makefile
 	$(CC) $(CFLAGS) -o delta2part -L$(LPATH2) -I$(CPATH2) kernels.hpp delta2part.cpp -lrfftw -lfftw -lm -lhdf5 -D H5_USE_16_API
-delta2pclvhm: delta2part_cleverloop.cpp kernels.hpp hash_temp.hpp  Makefile
+delta2pclvhm: delta2part_cleverloop.cpp kernels.hpp hash_temp.hpp Makefile
 	$(CC) $(CFLAGS) -std=c++11 -o delta2part_clvhm -L$(LPATH2) -I$(CPATH2) kernels.hpp hash_temp.hpp delta2part_cleverloop.cpp -lrfftw -lfftw -lm -DDOUBLEPRECISION #-lhdf5 -D H5_USE_16_API
 delta2pclv: delta2part_cleverloop.cpp kernels.hpp  Makefile
 	$(CC) $(CFLAGS) -o delta2part_clv -L$(LPATH2) -I$(CPATH2) kernels.hpp delta2part_cleverloop.cpp -lrfftw -lfftw -lm -DDOUBLEPRECISION #-lhdf5 -D H5_USE_16_API

@@ -9,15 +9,10 @@
 #include <sys/time.h>
 #include "kernels.hpp"
 
-
 #include <chrono>
 #include <unordered_map>
 #include <boost/functional/hash.hpp> //better hash libraries (for later)
 #include "hash_temp.hpp" //contains Key and Keyhasher*
-
-#include <boost/archive/binary_oarchive.hpp> 
-#include <boost/archive/binary_iarchive.hpp> 
-#include <boost/serialization/map.hpp> 
 
 using namespace std;
 
@@ -39,15 +34,73 @@ typedef float MyFloat;
 
 typedef std::unordered_map< Key, ab, KeyHasher_mod> hashmap;
 
-//template <typename ClassTo> 
-int Save(const string fname, hashmap &c)// const ClassTo &c) 
-{ 
-    ofstream f(fname.c_str(), ios::binary);
-    if (f.fail()) return -1;
-    boost::archive::binary_oarchive oa(f); 
-    oa << c; 
-    return 0;
+void serialize(string fname, hashmap const& map) {
+
+    ofstream ofs(fname, ios::binary); //"binary" will be ignored if "<<" is used. write is currently not correctly implemented.
+    //boost::archive::binary_oarchive oa(ofs, 0);
+
+    //ofs << map.key_eq() << map.get_allocator();
+	cout << "map size out: "<< map.size() << endl;
+
+
+    ofs << map.size() << endl;
+	//ofs.write(*map.size(), sizeof(size_t));
+    for (auto const& p: map) {// ofs.write(*p.first.idq, sizeof(size_t)); ofs.write(p.first.idp, sizeof(size_t)); ofs.write(p.first.alpha, sizeof(MyFloat)); ofs.write(p.first.beta, sizeof(MyFloat));
+	 ofs << p.first.idq << " " << p.first.idp << " " << p.second.alpha << " " << p.second.beta << endl; 
+	}
+    ofs.close();
 }
+
+hashmap deserialize(string fname) {
+
+	filebuf fb;
+	fb.open (fname, std::ios::in);// | ios::binary );
+
+    istream ifs(&fb);
+    //boost::archive::binary_oarchive ia(ifs, 0);
+
+    //hashmap::key_equal comparator;
+    //hashmap::allocator_type allocator;
+ 
+    //ifs >> comparator >> allocator;
+ 
+    hashmap map;
+
+    size_t size = 0;
+    ifs >> size ;
+    cout << "size: "<< size << endl;
+    for (size_t i = 0; i != size; ++i) {
+        hashmap::key_type key;
+        hashmap::mapped_type value;
+        ifs >> key.idq >> key.idp >> value.alpha >> value.beta;
+        map[key] = value;
+    }
+
+    fb.close();
+
+    return map;
+}
+
+MyFloat F(int q1, int q2, int q3, int p1, int p2, int p3){
+
+                MyFloat eps=1e-15,value=0.,modq,modp,moddiff;
+
+                int diff1=(q1-p1);
+                int diff2=(q2-p2);
+                int diff3=(q3-p3);
+
+                modq=(MyFloat)(q1*q1+q2*q2+q3*q3);
+                modp=(MyFloat)(p1*p1+p2*p2+p3*p3);
+                moddiff=(MyFloat)(diff1*diff1+diff2*diff2+diff3*diff3);
+
+                //qp=(float)(q1*p1+q2*p2+q3*p3);
+
+
+                value=1./2.*modq/(modp+eps)*(MyFloat)(p1*diff1+p2*diff2+p3*diff3)/(moddiff+eps);
+
+return value; //gives correct values compared with mathematica
+}
+
 
 int Ps(int res, MyFloat Boxlength, int nBins, fftw_complex *ft, const char *out){
 
@@ -182,7 +235,7 @@ int main(int argc, char *argv[]){
 	size_t res=atoi(argv[2]);
 	int r2=res/2; //must be int because it will later be compared to ints
 	size_t part=atoi(argv[6]); if(part>8 || part<0){cerr<<"part no. not between 0 and 8!"<<endl; return -1;}
-	size_t idstop=res*res*(r2+1),idstart=(part-1)*(idstop)/8,idstopn=idstart+(idstop)/8; if(part==0){idstart=1; /*id=0 is k=0 mode which is 0;*/ idstopn=idstop; } 
+	size_t idstop=res*res*(r2+1),idstart=(part-1)*(idstop)/8,idstopn=idstart+(idstop)/8; if(part==0){idstart=0; idstopn=idstop; } 
 
 	int ik,jk,lk,iq1,jq1,lq1;//,iq2,jq2,lq2;
 	size_t idk,idq1,idq2,id,idknew, i, index=0;
@@ -194,8 +247,11 @@ int main(int argc, char *argv[]){
 	MyFloat R=atof(argv[3]);	
 	MyFloat Boxsize=atof(argv[5]);
 	
-	MyFloat d1re, d2re, d1im, d2im,f=0., h1=0., h2=0., A=0., B=0.;
+	hashmap numbers;// = deserialize("mapout.txt");
+        cout << "MAP LOADED!"   << endl;
+	cout << "Bucket count: "<< numbers.bucket_count() << ", load factor: " << numbers.load_factor() << endl;
 
+	MyFloat d1re, d2re, d1im, d2im,f=0., h1=0., h2=0., A=0., B=0.;
 	fftw_complex *v2=(fftw_complex*)calloc(res*res*res,sizeof(fftw_complex));
 
 	// //read in delta1(x) from gridfile and ft to delta(k)
@@ -290,12 +346,13 @@ int main(int argc, char *argv[]){
 
 
 	
-    hashmap numbers;
 
 	cerr<<"beginning loop"<<endl;
 
 	int lowi, lowj, lowl, hii, hij, hil;
 	int iiq1, jjq1, llq1;
+
+	ab kern={0.,0.};
 
 	clock_t t0,t1;
 	t0=clock();
@@ -305,6 +362,8 @@ int main(int argc, char *argv[]){
 		jk=karr[id*4+1];
 		lk=karr[4*id+2];
 		idk=karr[4*id+3];
+
+	    //cout <<  "id: "<< id << ", idk: " << idk << " (" << ik <<", "<< jk << ", " << lk<< ")" << endl;
 
 		lowi=max(ik-r2, -r2+1);
 		lowj=max(jk-r2, -r2+1);
@@ -336,7 +395,7 @@ int main(int argc, char *argv[]){
 			idq2=(iiq2*res+jjq2)*res+llq2;
 
 			//kernels:
-			// //f=F(ik,jk,lk,iq1,jq1,lq1);
+			 //f=F(ik,jk,lk,iq1,jq1,lq1);
 			 f=beta(iq1,jq1,lq1,inq2,jnq2,lnq2);
 	
 			// //h1=H(ik,jk,lk,iq1,jq1,lq1);
@@ -345,9 +404,10 @@ int main(int argc, char *argv[]){
 			 h2=alpha(ik,jk,lk,inq2,jnq2,lnq2);
 
 			numbers[{idq1, idq2}]=(ab){h1, f};
-			//h1=numbers.at({idq1, idq2}).alpha;
-			//h2=numbers.at({idq1, idq2}).alpha;
-			//f=numbers.at({idq1, idq2}).beta;
+			//kern = numbers.at({idq1, idq2});
+			//h1=kern.alpha;
+			//h2=kern.alpha;
+			//f=kern.beta;
 
 
 			d1re=(MyFloat)ft[idq1].re;
@@ -377,11 +437,21 @@ int main(int argc, char *argv[]){
 	t1 = clock();//time(NULL);
 	//t1=MPI_Wtime();
 	int sved=-2;
-	//sved=Save< std::unordered_map<Key, ab> >(string("test.map"), numbers); 
-	sved=Save(string("test.map"), numbers); 
-	cout << "saved? " << sved<< endl;
+	//for( hashmap::const_iterator i = numbers.begin(), e = numbers.end() ; i != e ; ++i ) {
+          //std::cout << i->first.idq << ", " << i->first.idp << " -> "<< i->second.alpha << " " << i->second.beta << std::endl; //"; (hash = " << hashfunc( i->first ) << ")"  << std::endl;
+     //}
 
+
+	serialize("mapout.txt", numbers);
+	cout << "MAP SAVED!" << endl;
 	cerr<<"loop done"<<endl;
+
+	//hashmap numbers2 = deserialize("mapout.txt");
+	//cout << "MAP LOADED!"	<< endl;
+	//for( hashmap::const_iterator i = numbers2.begin(), e = numbers2.end() ; i != e ; ++i ) {
+          //std::cout << i->first.idq << ", " << i->first.idp << " -> "<< i->second.alpha << " " << i->second.beta << std::endl; //"; (hash = " << hashfunc( i->first ) << ")"  << std::endl;
+     //}
+
 
 	cout<< "Time: "<< t1-t0<< " " << (t1-t0)/MyFloat(idstopn-idstart)<< endl;
 
