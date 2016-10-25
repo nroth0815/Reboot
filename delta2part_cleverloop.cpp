@@ -2,21 +2,19 @@
 #include <stdlib.h>
 #include <sys/time.h>
 
-#include "header.hpp"
-
-//using namespace std;
+#include "header.hpp" //includes all double/float decisions and FFTW etc
 
 int main(int argc, char *argv[]){
 	
 	if(argc!=7){std::cerr<< "Usage: ./delta2part inputfile res <smoothing scale> <'IC' or 'z0'> Boxsize <part no (0: all, or 1-8)>" <<std::endl; return -1;}
 
-	std::string arg0=argv[0];
-	std::string argv2=argv[2];
-	std::string output,output2,outps;
+	const std::string arg0=argv[0];
+	const std::string argv2=argv[2];
+	std::string output, output2, outps;
 
-	size_t res=atoi(argv[2]);
+	const size_t res=atoi(argv[2]);
 	int r2=res/2; //must be int because it will later be compared to ints
-	size_t part=atoi(argv[6]); if(part>8 || part<0){std::cerr<<"part no. not between 0 and 8!"<<std::endl; return -1;}
+	const size_t part=atoi(argv[6]); if(part>8 || part<0){std::cerr<<"part no. not between 0 and 8!"<<std::endl; return -1;}
 	size_t idstop=res*res*(r2+1),idstart=(part-1)*(idstop)/8,idstopn=idstart+(idstop)/8; if(part==0){idstart=0; idstopn=idstop; } 
 
 	int ik,jk,lk,iq1,jq1,lq1;//,iq2,jq2,lq2;
@@ -26,10 +24,10 @@ int main(int argc, char *argv[]){
 	int *qarr=(int*)calloc(res*res*res*3,sizeof(int));
 	int *karr=(int*)calloc(idstop*4,sizeof(int));
 
-	MyFloat R=atof(argv[3]);	
-	MyFloat Boxsize=atof(argv[5]);
+	const MyFloat R=atof(argv[3]);	
+	const MyFloat Boxsize=atof(argv[5]);
 	
-	MyFloat d1re, d2re, d1im, d2im,f=0.,h1=0.,h2=0.,A=0.,B=0.,C=0.;
+	MyFloat d1re, d2re, d1im, d2im,f=0.,h1=0.,h2=0.,A=0.,B=0.;
 
 	fftw_complex *v2=(fftw_complex*)calloc(res*res*res,sizeof(fftw_complex));
 
@@ -62,7 +60,7 @@ int main(int argc, char *argv[]){
 	// H5Dclose(datasetid);
 	// H5Fclose(fid1);
 
-	std::string d2file=argv[1];
+	const std::string d2file=argv[1];
 
 	MyFloat *in=(MyFloat*)calloc(2*res*res*res,sizeof(MyFloat));
 	std::ifstream d2str(d2file.c_str());
