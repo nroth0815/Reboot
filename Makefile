@@ -23,7 +23,7 @@ LPATH3 = /users/nroth/localcode/fftw/lib
 #all: delta2p_trunc delta2p_trunc_s0 dtrunc
 #all: dtrunc_opt v2 smo dtrunc_opt3 delta2p
 
-all: hva delta2pclv
+all: delta2pclvn
 #all: delta2p delta2pclv hm
 #all: MACdelta2p MACdelta2pclv
 hva: hash_v_array.cpp hash_temp.hpp Makefile
@@ -32,6 +32,8 @@ hm: hash_test.cpp hash_temp.hpp Makefile
 	$(CC) $(CFLAGS) -std=c++11 hash_temp.hpp -o hash_test hash_test.cpp -lm 
 delta2p: delta2part.cpp Makefile
 	$(CC) $(CFLAGS) -o delta2part -L$(LPATH2) -I$(CPATH2) kernels.hpp delta2part.cpp -lrfftw -lfftw -lm -lhdf5 -D H5_USE_16_API
+delta2pclvn: delta2part_cleverloop.cpp header.hpp kernels.cpp stats.cpp Makefile
+	$(CC) $(CFLAGS) -o delta2part_clv -L$(LPATH2) -I$(CPATH2) header.hpp kernels.cpp stats.cpp delta2part_cleverloop.cpp -lrfftw -lfftw -lm -DDOUBLEPRECISION #-lhdf5 -D H5_USE_16_API
 delta2pclv: delta2part_cleverloop.cpp kernels.hpp  Makefile
 	$(CC) $(CFLAGS) -o delta2part_clv -L$(LPATH2) -I$(CPATH2) kernels.hpp delta2part_cleverloop.cpp -lrfftw -lfftw -lm -DDOUBLEPRECISION #-lhdf5 -D H5_USE_16_API
 MACdelta2p: delta2part.cpp Makefile HDF_IO.hh

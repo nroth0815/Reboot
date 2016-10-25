@@ -1,235 +1,23 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <cmath>
-#include <numeric>
-#include <vector>
-#include <iostream>
-#include <iomanip>
-#include <fstream>
 #include <sys/time.h>
-#include "kernels.hpp"
 
-using namespace std;
+#include "header.hpp"
 
-#ifdef MAC
-#include <mach/error.h>
-#include <srfftw.h>
-#include "/Users/nroth/Projects/code/HDF_IO.hh"
-#else
-#include <error.h>
-#include <rfftw.h>
-//#include "HDF_IO.hh"
-#endif
-
-#ifdef DOUBLEPRECISION
-typedef double MyFloat;
-#else
-typedef float MyFloat;
-#endif
-
-
-int Ps(int res, MyFloat Boxlength, int nBins, fftw_complex *ft, const char *out){
-
-	MyFloat *inBin = new MyFloat[nBins];
-	MyFloat *Gx = new MyFloat[nBins];
-	MyFloat *kbin = new MyFloat[nBins];
-	MyFloat kmax = M_PI/Boxlength*(MyFloat)res, kmin = 2.0f*M_PI/(MyFloat)Boxlength, dklog = log10(kmax/kmin)/nBins, kw = 2.0f*M_PI/(MyFloat)Boxlength;
-	int ix,iy,iz;
-	MyFloat kfft;
-	size_t idx2,idx;
-
-	for( ix=0; ix<nBins; ix++ ){
-		inBin[ix] = 0;
-		Gx[ix] = 0.0f;
-		kbin[ix] = 0.0f;
-	}
-
-	int iix, iiy, iiz, r2=res/2;
-
-	for(ix=0; ix<res;ix++){
-		for(iy=0;iy<res;iy++){
-			for(iz=0;iz<res;iz++){
-				idx = (ix*res+iy)*(res)+iz;
-
-				// determine mode modulus
-				MyFloat vabs = ft[idx].re*ft[idx].re+ft[idx].im*ft[idx].im; //factor 2??
-
-				if( ix>r2 ) iix = ix - res; else iix = ix;
-				if( iy>r2 ) iiy = iy - res; else iiy = iy;
-				if( iz>r2 ) iiz = iz - res; else iiz = iz;
-					//iiz = iz;
-				
-				kfft = sqrt(iix*iix+iiy*iiy+iiz*iiz);
-				MyFloat k = kfft*kw;
-				
-					// correct for aliasing, formula from Jing (2005), ApJ 620, 559
-					// assume isotropic aliasing (approx. true for k<kmax=knyquist)
-					// this formula is for CIC interpolation scheme, which we use <- only needed for Powerspectrum??
-				MyFloat JingCorr = (1.0f-2.0f/3.0f*sin(M_PI*k/kmax/2.0f)*sin(M_PI*k/kmax/2.0f));	
-				vabs /= JingCorr;
-
-					//.. logarithmic spacing in k
-				idx2 = (size_t)(( 1.0f/dklog * log10(k/kmin) ));
-				
-				if(k>=kmin&&k<kmax){
-					Gx[idx2] += vabs;
-					kbin[idx2] += k;
-					inBin[idx2]++;
-				}	
-			}
-		}
-	}
-   
-	MyFloat psnorm2=pow((2.0*M_PI)/Boxlength,3.0); //whatever, don't ask, this works
-	ofstream ofs(out);
-	for(ix=0; ix<nBins; ix++){
-		if(inBin[ix]>0){
-			ofs << std::setw(16) << pow (10., log10 (kmin) + dklog * (ix + 0.5) )
-			<< std::setw(16) <<  kbin[ix]/inBin[ix]
-			<< std::setw(16) << (MyFloat)(Gx[ix]/inBin[ix])/psnorm2
-			<< std::setw(16) << inBin[ix]
-			<< endl;
-
-		}
-		else{continue;}
-	}
-
-   	ofs.close();
-   	delete[] inBin;
-   	delete[] Gx;
-   	delete[] kbin;
-
-   	return 0;
-}
-
-fftw_complex *Smooth(const char *Outputfile, const char *Outputfile2, int res, fftw_complex *datain, MyFloat R, MyFloat Boxlength){
-
-	fftw_complex *data = (fftw_complex*)calloc(res*res*res,sizeof(fftw_complex));
-	fftw_complex *deltaw=(fftw_complex*)calloc(res*res*res,sizeof(fftw_complex));
-
-	
-	int i, k1, k2, k3, kk1,kk2,kk3, r2=res/2;
-
-  MyFloat k,w,kw = 2.0f*M_PI/(MyFloat)Boxlength; //kmin
-  ofstream out2(Outputfile2);
-
-	//calculate mod(k) and multiply with smoothing function
-
-  for(k1=0; k1<res;k1++)
-	for(k2=0;k2<res;k2++)
-		for(k3=0;k3<res;k3++){
-			i = (k1*res+k2)*(res)+k3;
-
-			if( k1>r2 ) kk1 = k1-res; else kk1 = k1;
-			if( k2>r2 ) kk2 = k2-res; else kk2 = k2;
-			if( k3>r2 ) kk3 = k3-res; else kk3 = k3;		
-
-			k=(MyFloat)(kk1*kk1+kk2*kk2+kk3*kk3)*kw*kw;
-			w=(MyFloat)exp((MyFloat)(-(MyFloat)(k*R*R)/2.));
-
-			deltaw[i].re=w*datain[i].re;	
-			deltaw[i].im=w*datain[i].im; out2<<deltaw[i].re<<" "<<deltaw[i].im<<endl;
-		}
-
-		out2.close();
-
-	 //fftw smoothed data back to real-space
-		fftwnd_plan p;
-		p = fftw3d_create_plan( res,res,res, FFTW_BACKWARD, FFTW_ESTIMATE );
-		fftwnd_one(p, deltaw, data);
-		fftwnd_destroy_plan(p);
-
-
-		ofstream out(Outputfile);
-		for(i=0;i<res*res*res;i++){ out<<data[i].re<<endl;}
-			out.close();
-
-		fftw_free(data);
-
-
-		return deltaw;
-	}			 
-
-MyFloat Fnew(int q1, int q2, int q3, int p1, int p2, int p3){ //this takes k1, k2, not k=k1+k2
-
-		MyFloat eps=1e-7,value=0.,modq,modp,qp;//, moddiff;
-
-		modq=(MyFloat)(q1*q1+q2*q2+q3*q3);
-		modp=(MyFloat)(p1*p1+p2*p2+p3*p3);
-		//moddiff=(MyFloat)(diff1*diff1+diff2*diff2+diff3*diff3);
-
-		qp=(MyFloat)(q1*p1+q2*p2+q3*p3);
-
-
-		value=2./7*qp*qp/(modq+eps)/(modp+eps)+1./2*qp*(1./(modq+eps)+1./(modp+eps)) ;
-		//1./2.*modq/(modp+eps)*(MyFloat)(p1*diff1+p2*diff2+p3*diff3)/(moddiff+eps);
-
-return value; //gives correct values compared with mathematica
-}
-
-MyFloat kernel(int q1, int q2, int q3, int p1, int p2, int p3){ //this takes k1, k2, not k=k1+k2
-
-		MyFloat eps=1e-7,value=0.,modq,modp,qp;//, moddiff;
-
-		modq=(MyFloat)(q1*q1+q2*q2+q3*q3);
-		modp=(MyFloat)(p1*p1+p2*p2+p3*p3);
-		//moddiff=(MyFloat)(diff1*diff1+diff2*diff2+diff3*diff3);
-
-		qp=(MyFloat)(q1*p1+q2*p2+q3*p3);
-
-
-		value=5./7+2./7*qp*qp/(modq+eps)/(modp+eps)+1./2*qp*(1./(modq+eps)+1./(modp+eps)) ;
-		//1./2.*modq/(modp+eps)*(MyFloat)(p1*diff1+p2*diff2+p3*diff3)/(moddiff+eps);
-
-return value; 
-}
-
-MyFloat F(int q1, int q2, int q3, int p1, int p2, int p3){
-
-		MyFloat eps=1e-16,value=0.,modq,modp,moddiff;
-
-		int diff1=(q1-p1);
-		int diff2=(q2-p2);
-		int diff3=(q3-p3);
-
-		modq=(MyFloat)(q1*q1+q2*q2+q3*q3);
-		modp=(MyFloat)(p1*p1+p2*p2+p3*p3);
-		moddiff=(MyFloat)(diff1*diff1+diff2*diff2+diff3*diff3);
-
-		//qp=(MyFloat)(q1*p1+q2*p2+q3*p3);
-
-
-		value=1./2.*modq/(modp+eps)*(MyFloat)(p1*diff1+p2*diff2+p3*diff3)/(moddiff+eps);
-
-return value; //gives correct values compared with mathematica
-}
-
-MyFloat H(int q1, int q2, int q3, int p1, int p2, int p3){
-	
-	MyFloat eps=1e-16,value=0.,modp,qp;
-	
-	modp=(MyFloat)(p1*p1+p2*p2+p3*p3);
-
-	qp=(MyFloat)(q1*p1+q2*p2+q3*p3);
-
-	value=qp/(MyFloat)(modp+eps); 
-
-
-return value; //gives correct values compared with mathematica
-}
+//using namespace std;
 
 int main(int argc, char *argv[]){
 	
-	if(argc!=7){cerr<< "Usage: ./delta2part inputfile res <smoothing scale> <'IC' or 'z0'> Boxsize <part no (0: all, or 1-8)>" <<endl; return -1;}
+	if(argc!=7){std::cerr<< "Usage: ./delta2part inputfile res <smoothing scale> <'IC' or 'z0'> Boxsize <part no (0: all, or 1-8)>" <<std::endl; return -1;}
 
-	string arg0=argv[0];
-	string argv2=argv[2];
-	string output,output2,outps;
+	std::string arg0=argv[0];
+	std::string argv2=argv[2];
+	std::string output,output2,outps;
 
 	size_t res=atoi(argv[2]);
 	int r2=res/2; //must be int because it will later be compared to ints
-	size_t part=atoi(argv[6]); if(part>8 || part<0){cerr<<"part no. not between 0 and 8!"<<endl; return -1;}
-	size_t idstop=res*res*(r2+1),idstart=(part-1)*(idstop)/8,idstopn=idstart+(idstop)/8; if(part==0){idstart=1; /*id=0 is k=0 mode which is 0;*/ idstopn=idstop; } 
+	size_t part=atoi(argv[6]); if(part>8 || part<0){std::cerr<<"part no. not between 0 and 8!"<<std::endl; return -1;}
+	size_t idstop=res*res*(r2+1),idstart=(part-1)*(idstop)/8,idstopn=idstart+(idstop)/8; if(part==0){idstart=0; idstopn=idstop; } 
 
 	int ik,jk,lk,iq1,jq1,lq1;//,iq2,jq2,lq2;
 	size_t idk,idq1,idq2,id,idknew, i, index=0;
@@ -274,12 +62,12 @@ int main(int argc, char *argv[]){
 	// H5Dclose(datasetid);
 	// H5Fclose(fid1);
 
-	string d2file=argv[1];
+	std::string d2file=argv[1];
 
 	MyFloat *in=(MyFloat*)calloc(2*res*res*res,sizeof(MyFloat));
-	ifstream d2str(d2file.c_str());
+	std::ifstream d2str(d2file.c_str());
     if (d2str.fail()) {
-    	cerr << "unable to open file "<<d2file.c_str()<< " for reading" << endl;
+    	std::cerr << "unable to open file "<<d2file.c_str()<< " for reading" << std::endl;
         exit(1);
     }
     for(i=0;i<res*res*res*2;i++){d2str>>in[i];}
@@ -290,7 +78,7 @@ int main(int argc, char *argv[]){
 
 	//normalise for fftw
 	fftw_complex *arr2 = (fftw_complex*)calloc(res*res*res,sizeof(fftw_complex));
-	for(i=0;i<res*res*res;i++){arr2[i].re=in[i]/pow(res,3.0);}//cout<<arr[i]*arr[i]<<endl;} 
+	for(i=0;i<res*res*res;i++){arr2[i].re=in[i]/pow(res,3.0);}//std::cout<<arr[i]*arr[i]<<std::endl;} 
 
 	//calculate fftw
 	fftw_complex *ft = (fftw_complex*)calloc(res*res*res,sizeof(fftw_complex));
@@ -303,7 +91,7 @@ int main(int argc, char *argv[]){
 	fftw_free(arr2);
     free(in);
 
-    //for(i=0;i<res*res*res;i++){cout << i << " "<< ft[i].re << " " << ft[i].im<<endl;}
+    //for(i=0;i<res*res*res;i++){std::cout << i << " "<< ft[i].re << " " << ft[i].im<<std::endl;}
 
 	//calulate k values
 	for(iq=-(r2-1);iq<r2+1;iq++){
@@ -336,7 +124,7 @@ int main(int argc, char *argv[]){
 	}
 
 
-	cerr<<"beginning loop"<<endl;
+	std::cerr<<"beginning loop"<<std::endl;
 
 	int lowi, lowj, lowl, hii, hij, hil;
 	int iiq1, jjq1, llq1;
@@ -350,13 +138,13 @@ int main(int argc, char *argv[]){
 		lk=karr[4*id+2];
 		idk=karr[4*id+3];
 
-		lowi=max(ik-r2, -r2+1);
-		lowj=max(jk-r2, -r2+1);
-		lowl=max(lk-r2, -r2+1);		
+		lowi=std::max(ik-r2, -r2+1);
+		lowj=std::max(jk-r2, -r2+1);
+		lowl=std::max(lk-r2, -r2+1);		
 
-		hii=min(ik+r2, r2);
-		hij=min(jk+r2, r2);
-		hil=min(lk+r2, r2);
+		hii=std::min(ik+r2, r2);
+		hij=std::min(jk+r2, r2);
+		hil=std::min(lk+r2, r2);
 
 		for(iq1 = lowi; iq1<hii; iq1++){
 			for(jq1 = lowj; jq1<hij; jq1++){
@@ -408,7 +196,7 @@ int main(int argc, char *argv[]){
 
 					//t1 = second();
 
-					//cout<< "Time for 1 loop"<< t0-t1<< endl;
+					//std::cout<< "Time for 1 loop"<< t0-t1<< std::endl;
 
 	}
 	
@@ -416,9 +204,9 @@ int main(int argc, char *argv[]){
 	//t1=MPI_Wtime();
 	
 
-	cerr<<"loop done"<<endl;
+	std::cerr<<"loop done"<<std::endl;
 
-	cout<< "Time: "<< t1-t0<< " " << (t1-t0)/MyFloat(idstopn-idstart)<< endl;
+	std::cout<< "Time: "<< t1-t0<< " " << (t1-t0)/MyFloat(idstopn-idstart)<< std::endl;
 
 
 	if(part==0){//symmetrize missing values only if all parts are calculated
@@ -462,7 +250,7 @@ int main(int argc, char *argv[]){
 	//calculate power spectrum and output
 	Ps(res, Boxsize, 100, ftsm, outps.c_str());
 
-	cerr<<"delta2(x), delta2(k) and ps done"<<endl;
+	std::cerr<<"delta2(x), delta2(k) and ps done"<<std::endl;
 
  	}
 
@@ -471,13 +259,13 @@ int main(int argc, char *argv[]){
 
 		output2=arg0+"_"+argv[2]+"_"+argv[4]+argv[5]+"_"+argv[3]+"_part"+argv[6]+"_kspace.txt";
 
-		ofstream out2(output2.c_str());
+		std::ofstream out2(output2.c_str());
 
-		for(i=0;i<res*res*res;i++){out2<<v2[i].re<<" "<<v2[i].im<<endl;}
+		for(i=0;i<res*res*res;i++){out2<<v2[i].re<<" "<<v2[i].im<<std::endl;}
 
-			out2.close();		
+		out2.close();		
 
-		cerr<<"part " <<argv[6]<< " done"<<endl;
+		std::cerr<<"part " <<argv[6]<< " done"<<std::endl;
 
 	}
 	
