@@ -15,7 +15,7 @@ int main(int argc, char *argv[]){
 	const size_t res=atoi(argv[2]);
 	int r2=res/2; //must be int because it will later be compared to ints
 	const size_t part=atoi(argv[6]); if(part>8 || part<0){std::cerr<<"part no. not between 0 and 8!"<<std::endl; return -1;}
-	size_t idstop=res*res*(r2+1),idstart=(part-1)*(idstop)/8,idstopn=idstart+(idstop)/8; if(part==0){idstart=0; idstopn=idstop; } 
+	size_t idstop=res*res*(r2+1), idstart=(part-1)*(idstop)/8, idstopn=idstart+(idstop)/8; if(part==0){idstart=0; idstopn=idstop;} 
 
 	int ik,jk,lk,iq1,jq1,lq1;//,iq2,jq2,lq2;
 	size_t idk,idq1,idq2,id,idknew, i, index=0;
@@ -131,6 +131,7 @@ int main(int argc, char *argv[]){
 	t0=clock();
 
 	for(id=idstart;id<idstopn;id++){
+
 		ik=karr[id*4];
 		jk=karr[id*4+1];
 		lk=karr[4*id+2];
@@ -146,77 +147,69 @@ int main(int argc, char *argv[]){
 
 		for(iq1 = lowi; iq1<hii; iq1++){
 			for(jq1 = lowj; jq1<hij; jq1++){
-				for(lq1 = lowl; lq1<hil; lq1++){			
+				for(lq1 = lowl; lq1<hil; lq1++){	
 
+					inq2=ik-iq1; 
+					jnq2=jk-jq1; 
+					lnq2=lk-lq1; 
 
+					if(iq1<0){iiq1=res+iq1;}else{iiq1=iq1;}
+					if(jq1<0){jjq1=res+jq1;}else{jjq1=jq1;}
+					if(lq1<0){llq1=res+lq1;}else{llq1=lq1;}
 
-			inq2=ik-iq1; 
-			jnq2=jk-jq1; 
-			lnq2=lk-lq1; 
+					idq1=(iiq1*res+jjq1)*res+llq1;
 
-			if(iq1<0){iiq1=res+iq1;}else{iiq1=iq1;}
-			if(jq1<0){jjq1=res+jq1;}else{jjq1=jq1;}
-			if(lq1<0){llq1=res+lq1;}else{llq1=lq1;}
-			idq1=(iiq1*res+jjq1)*res+llq1;
+					if(inq2<0){iiq2=res+inq2;}else{iiq2=inq2;}
+					if(jnq2<0){jjq2=res+jnq2;}else{jjq2=jnq2;}
+					if(lnq2<0){llq2=res+lnq2;}else{llq2=lnq2;}		
 
-			if(inq2<0){iiq2=res+inq2;}else{iiq2=inq2;}
-			if(jnq2<0){jjq2=res+jnq2;}else{jjq2=jnq2;}
-			if(lnq2<0){llq2=res+lnq2;}else{llq2=lnq2;}		
+					idq2=(iiq2*res+jjq2)*res+llq2;
 
-			idq2=(iiq2*res+jjq2)*res+llq2;
-
-			//kernels:
-			//f=F(ik,jk,lk,iq1,jq1,lq1);
-			f=beta(iq1,jq1,lq1,inq2,jnq2,lnq2);
-	
-			//h1=H(ik,jk,lk,iq1,jq1,lq1);
-			//h2=H(ik,jk,lk,inq2,jnq2,lnq2);
-			h1=alpha(ik,jk,lk,iq1,jq1,lq1);
-			h2=alpha(ik,jk,lk,inq2,jnq2,lnq2);
-
-			d1re=(MyFloat)ft[idq1].re;
-			d2re=(MyFloat)ft[idq2].re;
-			d1im=(MyFloat)ft[idq1].im;
-			d2im=(MyFloat)ft[idq2].im;
-
-			A=d2re*d1re-d2im*d1im;
-			v2[idk].re+=(MyFloat)(5.*(h1*A+h2*A)+4.*f*A)/14.;
-
-			B=d2re*d1im+d1re*d2im;
-			v2[idk].im+=(MyFloat)(5.*(h1*B+h2*B)+4.*f*B)/14.;	
-
+					//kernels:
+					//f=F(ik,jk,lk,iq1,jq1,lq1);
+					f=beta(iq1,jq1,lq1,inq2,jnq2,lnq2);
 			
+					//h1=H(ik,jk,lk,iq1,jq1,lq1);
+					//h2=H(ik,jk,lk,inq2,jnq2,lnq2);
+					h1=alpha(ik,jk,lk,iq1,jq1,lq1);
+					h2=alpha(ik,jk,lk,inq2,jnq2,lnq2);
+
+					d1re=(MyFloat)ft[idq1].re;
+					d2re=(MyFloat)ft[idq2].re;
+					d1im=(MyFloat)ft[idq1].im;
+					d2im=(MyFloat)ft[idq2].im;
+
+					A=d2re*d1re-d2im*d1im;
+					v2[idk].re+=(MyFloat)(5.*(h1*A+h2*A)+4.*f*A)/14.;
+
+					B=d2re*d1im+d1re*d2im;
+					v2[idk].im+=(MyFloat)(5.*(h1*B+h2*B)+4.*f*B)/14.;	
 			
-		}
-		}
+				}
+			}
 		}
 		
-
-					//t1 = second();
-
-					//std::cout<< "Time for 1 loop"<< t0-t1<< std::endl;
-
-	}
+		//t1 = second();
+		//std::cout<< "Time for 1 loop"<< t0-t1<< std::endl;
 	
-	t1 = clock();//time(NULL);
-	//t1=MPI_Wtime();
+	} //end of idk loop
 	
+	t1 = clock();	
 
 	std::cerr<<"loop done"<<std::endl;
-
 	std::cout<< "Time: "<< t1-t0<< " " << (t1-t0)/MyFloat(idstopn-idstart)<< std::endl;
 
 
 	if(part==0){//symmetrize missing values only if all parts are calculated
-		v2[r2].im=0.;
-		v2[r2*res].im=0;
-		v2[r2*res+r2].im=0;
-		v2[r2*res*res].im=0;
-		v2[r2*res*res+r2].im=0;
-		v2[(r2*res+r2)*res].im=0;
-		v2[(r2*res+r2)*res+r2].im=0;
+		// v2[r2].im=0.;
+		// v2[r2*res].im=0;
+		// v2[r2*res+r2].im=0;
+		// v2[r2*res*res].im=0;
+		// v2[r2*res*res+r2].im=0;
+		// v2[(r2*res+r2)*res].im=0;
+		// v2[(r2*res+r2)*res+r2].im=0;
 
-		for(index=1;index<idstop;index++){ //index=0 is dealt with below
+		for(index=0;index<idstopn;index++){ //index=0 is dealt with below
 
 			ik=karr[index*4];
 			jk=karr[index*4+1];
@@ -229,26 +222,30 @@ int main(int argc, char *argv[]){
 			if(l<0){ll=res+l;}else{ll=l;}
 			idknew=(ii*res+jj)*res+ll;
 
-			v2[idknew].re=v2[idk].re;
-			v2[idknew].im=-v2[idk].im;
+			std:: cout << idk << " " << idknew << " (" << ik << ", " << jk << ", "<< lk << "); (" << ii << ", " << jj << ", "<< ll<< ")" << std::endl;
+			std:: cout << idk << " " << idknew << " (" << v2[idk].re << ", " << v2[idk].im << "); (" << v2[idknew].re << ", " << v2[idknew].im<< ")" << std::endl;
+			std::cout << std::endl;
+
+			//v2[idknew].re=v2[idk].re;
+			//v2[idknew].im=-v2[idk].im;
 		
 		}
 
-	v2[0].re=0.; //enforce the mean 0 condition (already fine up to numerical accuracy anyway)
-	v2[0].im=0.;
+		v2[0].re=0.; //enforce the mean 0 condition (already fine up to numerical accuracy anyway)
+		v2[0].im=0.;
 
-	output=arg0+"_"+argv[2]+"_"+argv[4]+argv[5]+"_"+argv[3]+"_real.txt";
-	output2=arg0+"_"+argv[2]+"_"+argv[4]+argv[5]+"_"+argv[3]+"_kspace.txt";
-	outps=arg0+"_"+argv[2]+"_"+argv[4]+argv[5]+"_"+argv[3]+"_ps.txt";
+		output=arg0+"_"+argv[2]+"_"+argv[4]+argv[5]+"_"+argv[3]+"_real.txt";
+		output2=arg0+"_"+argv[2]+"_"+argv[4]+argv[5]+"_"+argv[3]+"_kspace.txt";
+		outps=arg0+"_"+argv[2]+"_"+argv[4]+argv[5]+"_"+argv[3]+"_ps.txt";
 
-	//smooth with exp(-(kR)^2)
-	fftw_complex *ftsm=(fftw_complex*)calloc(res*res*res,sizeof(fftw_complex));
-	ftsm=Smooth(output.c_str(), output2.c_str(), res, v2, R, Boxsize);
+		//smooth with exp(-(kR)^2)
+		fftw_complex *ftsm=(fftw_complex*)calloc(res*res*res,sizeof(fftw_complex));
+		ftsm=Smooth(output.c_str(), output2.c_str(), res, v2, R, Boxsize);
 
-	//calculate power spectrum and output
-	Ps(res, Boxsize, 100, ftsm, outps.c_str());
+		//calculate power spectrum and output
+		Ps(res, Boxsize, 100, ftsm, outps.c_str());
 
-	std::cerr<<"delta2(x), delta2(k) and ps done"<<std::endl;
+		std::cerr<<"delta2(x), delta2(k) and ps done"<<std::endl;
 
  	}
 
@@ -258,9 +255,7 @@ int main(int argc, char *argv[]){
 		output2=arg0+"_"+argv[2]+"_"+argv[4]+argv[5]+"_"+argv[3]+"_part"+argv[6]+"_kspace.txt";
 
 		std::ofstream out2(output2.c_str());
-
 		for(i=0;i<res*res*res;i++){out2<<v2[i].re<<" "<<v2[i].im<<std::endl;}
-
 		out2.close();		
 
 		std::cerr<<"part " <<argv[6]<< " done"<<std::endl;
