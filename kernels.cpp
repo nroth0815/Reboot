@@ -1,4 +1,6 @@
-#include "header.hpp"
+#include "kernels.hpp"
+
+#include <float.h>
 
 MyFloat alpha(int q1, int q2, int q3, int p1, int p2, int p3){
 	
@@ -36,9 +38,9 @@ MyFloat kernel(int q1, int q2, int q3, int p1, int p2, int p3){ //this takes k1,
 		MyFloat eps, value=0.,modq,modp,qp;
 
 #ifdef DOUBLEPRECISION
-eps=1e-15;
+eps=DBL_EPSILON;//1e-15;
 #else
-eps=1e-07;
+eps=FLT_EPSILON;//1e-07;
 #endif
 
 		modq=(MyFloat)(q1*q1+q2*q2+q3*q3);

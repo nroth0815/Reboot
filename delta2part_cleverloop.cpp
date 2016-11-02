@@ -1,28 +1,44 @@
+#include "kernels.hpp" //includes all double/float decisions and FFTW etc
+#include "stats.hpp"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/time.h>
-
-#include "header.hpp" //includes all double/float decisions and FFTW etc
+#include <iostream> //for cerr
+#include <fstream>
+#include <fenv.h>
 
 int main(int argc, char *argv[]){
 	
 	if(argc!=7){std::cerr<< "Usage: ./delta2part inputfile res <smoothing scale> <'IC' or 'z0'> Boxsize <part no (0: all, or 1-8)>" <<std::endl; return -1;}
+
+// store the original rounding mode
+const int originalRounding = fegetround( );
+// establish the desired rounding mode
+fesetround(FE_TONEAREST); //this is the standard method!
+//fesetround(FE_TOWARDZERO);
+//fesetround(FE_UPWARD);
+//fesetround(FE_DOWNWARD);
+// do whatever you need to do ...
+
 
 	const std::string arg0=argv[0];
 	const std::string argv2=argv[2];
 	std::string output, output2, outps;
 
 	const size_t res=atoi(argv[2]);
-	int r2=res/2; //must be int because it will later be compared to ints
+	const int r2=res/2; //must be int because it will later be compared to ints
 	const size_t part=atoi(argv[6]); if(part>8 || part<0){std::cerr<<"part no. not between 0 and 8!"<<std::endl; return -1;}
-	size_t idstop=res*res*(r2+1), idstart=(part-1)*(idstop)/8, idstopn=idstart+(idstop)/8; if(part==0){idstart=0; idstopn=idstop;} 
+	size_t idstop=res*res*(r2+1), idstart=(part-1)*(idstop)/8, idstopn=idstart+(idstop)/8; if(part==0){idstart=0; idstopn=idstop;}
+
 
 	int ik,jk,lk,iq1,jq1,lq1;//,iq2,jq2,lq2;
 	size_t idk,idq1,idq2,id,idknew, i, index=0;
 	int inq2,jnq2,lnq2,iq,j,l,ii,jj,ll,iiq2,jjq2,llq2;
 
 	int *qarr=(int*)calloc(res*res*res*3,sizeof(int));
-	int *karr=(int*)calloc(idstop*4,sizeof(int));
+	//int *karr=(int*)calloc(idstop*4,sizeof(int));
+	int *karr=(int*)calloc(res*res*res*4,sizeof(int));
 
 	const MyFloat R=atof(argv[3]);	
 	const MyFloat Boxsize=atof(argv[5]);
@@ -76,7 +92,7 @@ int main(int argc, char *argv[]){
 
 	//normalise for fftw
 	fftw_complex *arr2 = (fftw_complex*)calloc(res*res*res,sizeof(fftw_complex));
-	for(i=0;i<res*res*res;i++){arr2[i].re=in[i]/pow(res,3.0);}//std::cout<<arr[i]*arr[i]<<std::endl;} 
+	for(i=0;i<res*res*res;i++){arr2[i].re=in[i]; } ///pow(res,3.0);}//std::cout<<arr[i]*arr[i]<<std::endl;} 
 
 	//calculate fftw
 	fftw_complex *ft = (fftw_complex*)calloc(res*res*res,sizeof(fftw_complex));
@@ -87,18 +103,22 @@ int main(int argc, char *argv[]){
 	ft[0].im=0.;
 
 	fftw_free(arr2);
-    free(in);
+    	free(in);
 
     //for(i=0;i<res*res*res;i++){std::cout << i << " "<< ft[i].re << " " << ft[i].im<<std::endl;}
+
+	//int ll;
 
 	//calulate k values
 	for(iq=-(r2-1);iq<r2+1;iq++){
 		if(iq<0){ii=res+iq;}else{ii=iq;}
 		for(j=-(r2-1);j<r2+1;j++){
 			if(j<0){jj=res+j;}else{jj=j;}		
-			for(l=0;l<r2+1;l++){
+			//for(l=0;l<r2+1;l++){
+			for(l=-(r2-1);l<r2+1;l++){
+				if(l<0){ll=res+l;}else{ll=l;}
 				
-				idk=(ii*(res)+jj)*(res)+l;		
+				idk=(ii*(res)+jj)*(res)+ll;		
 				
 				karr[4*index]=iq; karr[4*index+1]=j; karr[4*index+2]=l; karr[4*index+3]=idk;
 				index+=1;
@@ -127,8 +147,11 @@ int main(int argc, char *argv[]){
 	int lowi, lowj, lowl, hii, hij, hil;
 	int iiq1, jjq1, llq1;
 
-	clock_t t0,t1;
+	clock_t t0, t1;
 	t0=clock();
+
+	idstopn=res*res*res;
+	//part=15;
 
 	for(id=idstart;id<idstopn;id++){
 
@@ -137,13 +160,17 @@ int main(int argc, char *argv[]){
 		lk=karr[4*id+2];
 		idk=karr[4*id+3];
 
-		lowi=std::max(ik-r2, -r2+1);
-		lowj=std::max(jk-r2, -r2+1);
-		lowl=std::max(lk-r2, -r2+1);		
+		//std::cout << id << " " << idk << std::endl;
+
+		lowi=std::max(ik-r2, -r2);
+		lowj=std::max(jk-r2, -r2);
+		lowl=std::max(lk-r2, -r2);		
 
 		hii=std::min(ik+r2, r2);
 		hij=std::min(jk+r2, r2);
 		hil=std::min(lk+r2, r2);
+
+		//if(idk == 22 || idk ==62){std:: cout << lowi << " " << hii << " " << lowj << " " << hij << " " << lowl << " " << hil << std::endl;}
 
 		for(iq1 = lowi; iq1<hii; iq1++){
 			for(jq1 = lowj; jq1<hij; jq1++){
@@ -165,14 +192,18 @@ int main(int argc, char *argv[]){
 
 					idq2=(iiq2*res+jjq2)*res+llq2;
 
+					//if(idk == 22 || idk ==62){ std::cout << idq1 << "( "<<ft[idq1].re<< ", "<<ft[idq1].im<< " ); " << idq2 <<"( "<<ft[idq2].re<< ", "<<ft[idq2].im<< " ) " << std::endl;}
+
 					//kernels:
 					//f=F(ik,jk,lk,iq1,jq1,lq1);
 					f=beta(iq1,jq1,lq1,inq2,jnq2,lnq2);
-			
+					//f=1.;
 					//h1=H(ik,jk,lk,iq1,jq1,lq1);
 					//h2=H(ik,jk,lk,inq2,jnq2,lnq2);
 					h1=alpha(ik,jk,lk,iq1,jq1,lq1);
 					h2=alpha(ik,jk,lk,inq2,jnq2,lnq2);
+					//h1=1.;
+					//h2=1.;
 
 					d1re=(MyFloat)ft[idq1].re;
 					d2re=(MyFloat)ft[idq2].re;
@@ -208,13 +239,30 @@ int main(int argc, char *argv[]){
 		// v2[r2*res*res+r2].im=0;
 		// v2[(r2*res+r2)*res].im=0;
 		// v2[(r2*res+r2)*res+r2].im=0;
+		int index2=0;
+		std:: cout << (res*res*res)-idstopn << std::endl;
+		//for(index=0;index<idstopn;index++){ //index=0 is dealt with below
+		//for(index=0;index<(res*res*res)-idstopn;index++){
+		for(index=0;index<res*res*res;index++){
+		// for(iq=-(r2-1);iq<r2+1;iq++){
+		// 	if(iq<0){ii=res+iq;}else{ii=iq;}
+		// 	for(j=-(r2-1);j<r2+1;j++){
+		// 		if(j<0){jj=res+j;}else{jj=j;}		
+		// 		for(l=-(r2-1);l<0;l++){
+		// 		if(l<0){ll=res+l;}else{ll=l;}
 
-		for(index=0;index<idstopn;index++){ //index=0 is dealt with below
+
+			// index2=(index*(res-1)+1)*4; //correct for res=4
+			// ik=karr[index2];
+			// jk=karr[index2+1];
+			// lk=karr[index2+2];
+			// idk=karr[index2+3];
 
 			ik=karr[index*4];
 			jk=karr[index*4+1];
 			lk=karr[index*4+2];
 			idk=karr[index*4+3];
+			//ik=-iq; jk=-j; lk=-l;
 
 			iq=-ik; j=-jk; l=-lk;
 			if(iq<0){ii=res+iq;}else{ii=iq;}
@@ -222,9 +270,9 @@ int main(int argc, char *argv[]){
 			if(l<0){ll=res+l;}else{ll=l;}
 			idknew=(ii*res+jj)*res+ll;
 
-			std:: cout << idk << " " << idknew << " (" << ik << ", " << jk << ", "<< lk << "); (" << ii << ", " << jj << ", "<< ll<< ")" << std::endl;
-			std:: cout << idk << " " << idknew << " (" << v2[idk].re << ", " << v2[idk].im << "); (" << v2[idknew].re << ", " << v2[idknew].im<< ")" << std::endl;
-			std::cout << std::endl;
+			//std:: cout << index << " "<< idk << " " << idknew << " (" << ik << ", " << jk << ", "<< lk << "); (" << ii << ", " << jj << ", "<< ll<< ")" << std::endl;
+			//std:: cout << index << " "<< idk << " " << idknew << " (" << v2[idk].re << ", " << v2[idk].im << "); (" << v2[idknew].re << ", " << v2[idknew].im<< ")" << std::endl;
+			//std::cout << std::endl;
 
 			//v2[idknew].re=v2[idk].re;
 			//v2[idknew].im=-v2[idk].im;
@@ -266,6 +314,9 @@ int main(int argc, char *argv[]){
 	fftw_free(v2);
 	free(qarr);
 	free(karr);
+
+// ... and restore the original mode afterwards
+fesetround(originalRounding);
 
 
 	return 0;
