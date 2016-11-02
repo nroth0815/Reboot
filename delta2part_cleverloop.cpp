@@ -6,21 +6,10 @@
 #include <sys/time.h>
 #include <iostream> //for cerr
 #include <fstream>
-#include <fenv.h>
 
 int main(int argc, char *argv[]){
 	
 	if(argc!=7){std::cerr<< "Usage: ./delta2part inputfile res <smoothing scale> <'IC' or 'z0'> Boxsize <part no (0: all, or 1-8)>" <<std::endl; return -1;}
-
-// store the original rounding mode
-const int originalRounding = fegetround( );
-// establish the desired rounding mode
-fesetround(FE_TONEAREST); //this is the standard method!
-//fesetround(FE_TOWARDZERO);
-//fesetround(FE_UPWARD);
-//fesetround(FE_DOWNWARD);
-// do whatever you need to do ...
-
 
 	const std::string arg0=argv[0];
 	const std::string argv2=argv[2];
@@ -314,10 +303,6 @@ fesetround(FE_TONEAREST); //this is the standard method!
 	fftw_free(v2);
 	free(qarr);
 	free(karr);
-
-// ... and restore the original mode afterwards
-fesetround(originalRounding);
-
 
 	return 0;
 }
