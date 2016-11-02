@@ -1,4 +1,4 @@
-#include "header.hpp"
+#include "stats.hpp"
 
 int Ps(int res, MyFloat Boxlength, int nBins, fftw_complex *ft, const char *out){
 
