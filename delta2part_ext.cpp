@@ -67,21 +67,38 @@ int main(int argc, char *argv[]){
 
 	const std::string d2file=argv[1];
 
-	MyFloat *in=(MyFloat*)calloc(2*res*res*res,sizeof(MyFloat));
+	MyFloat *in=(MyFloat*)calloc(res*res*res,sizeof(MyFloat));
 	std::ifstream d2str(d2file.c_str());
     if (d2str.fail()) {
     	std::cerr << "unable to open file "<<d2file.c_str()<< " for reading" << std::endl;
         exit(1);
     }
-    for(i=0;i<res*res*res*2;i++){d2str>>in[i];}
+    for(i=0;i<res*res*res;i++){d2str>>in[i];}
     d2str.close();
 
-	//fftw_complex *ft = (fftw_complex*)calloc(res*res*res,sizeof(fftw_complex));
-    //for(i=0;i<res*res*res;i++){ft[i].re=in[2*i]; ft[i].im=in[2*i+1];}
+	int rfull=r2*2;
+	//int iq2, jq2, lq2, idk1;
 
+	MyFloat *in_pad=(MyFloat*)calloc(27*res*res*res,sizeof(MyFloat));
+	for(ik=0;ik<3*rfull;ik++){
+		iq1= ik%rfull;
+		for(jk=0;jk<3*rfull;jk++){
+			jq1= jk%rfull;
+			for(lk=0;lk<3*rfull;lk++){
+				lq1=lk%rfull;
+		
+				idk=(ik*3*rfull+jk)*3*rfull+lk;
+				idq1=(iq1*rfull+jq1)*rfull+lq1;	
+				in_pad[idk]=in[idq1];
+		
+			}
+		}
+	}
+	
+	
 	//normalise for fftw
 	fftw_complex *arr2 = (fftw_complex*)calloc(res*res*res,sizeof(fftw_complex));
-	for(i=0;i<res*res*res;i++){arr2[i].re=in[i]; } ///pow(res,3.0);}//std::cout<<arr[i]*arr[i]<<std::endl;} 
+	for(i=0;i<res*res*res;i++){arr2[i].re=in[i];}// std::cout<<i << " " << arr2[i].re<<std::endl;} 
 
 	//calculate fftw
 	fftw_complex *ft = (fftw_complex*)calloc(res*res*res,sizeof(fftw_complex));
@@ -91,10 +108,26 @@ int main(int argc, char *argv[]){
 	ft[0].re=0.;
 	ft[0].im=0.;
 
+	//for(i=0;i<res*res*res;i++){std::cout<<i << " " << ft[i].re << " " <<ft[i].im<<std::endl;} 
+
+	fftw_complex *arr2_ext = (fftw_complex*)calloc(27*res*res*res,sizeof(fftw_complex));
+	for(i=0;i<27*res*res*res;i++){arr2_ext[i].re=in_pad[i];}// std::cout<< i << " " <<arr2_ext[i].re <<std::endl;} 
+	//calculate fftw
+	fftw_complex *ft_ext = (fftw_complex*)calloc(27*res*res*res,sizeof(fftw_complex));
+	fftwnd_plan p_ext = fftw3d_create_plan( 3*res, 3*res, 3*res, FFTW_FORWARD, FFTW_ESTIMATE );
+	fftwnd_one(p_ext, arr2_ext, ft_ext);
+	fftwnd_destroy_plan(p_ext);
+	ft_ext[0].re=0.;
+	ft_ext[0].im=0.;
+
+
 	fftw_free(arr2);
     free(in);
+    free(in_pad);
 
-    //for(i=0;i<res*res*res;i++){std::cout << i << " "<< ft[i].re << " " << ft[i].im<<std::endl;}
+    std::cout << std::endl;
+
+    for(i=0;i<27*res*res*res;i++){std::cout << i << " "<< ft_ext[i].re << " " << ft_ext[i].im<<std::endl;}
 
 	//int ll;
 
@@ -185,8 +218,6 @@ int main(int argc, char *argv[]){
 
 					idq2=(iiq2*res+jjq2)*res+llq2;
 
-
-
 					//kernels:
 					//f=F(ik,jk,lk,iq1,jq1,lq1);
 					f=beta(iq1,jq1,lq1,inq2,jnq2,lnq2);
@@ -209,13 +240,13 @@ int main(int argc, char *argv[]){
 					B=d2re*d1im+d1re*d2im;
 					v2[idk].im+=(5.*(h1+h2)+4.*f)/14.*B;		
 
-					if(idk == 22 || idk ==62){ 
-					 	std::cout << idk << " (" << ik << ", "<< jk << ", "<< lk << ") | "<< h1 << " " << h2 << " "<< f <<  " = " << 5*h1+5*h2+4*f << std::endl;
-					 	std::cout << idq1 << "( "<<ft[idq1].re<< ", "<<ft[idq1].im<< " ); " << idq2 <<"( "<<ft[idq2].re<< ", "<<ft[idq2].im<< " ) " << std::endl;
-					 	std::cout << "("<< iq1 << ", " << jq1 << ", " << lq1 << "); " <<  "("<< inq2 << ", " << jnq2 << ", " << lnq2 << ")" << "| A: " << (5.*(h1+h2)+4.*f)/14.*A << " |  B: " <<(5.*(h1+h2)+4.*f)/14.*B << std::endl;
-					// 	std::cout << h1 << " "<< h2 << " " << f << ", "<< A << " " << B <<std::endl;
-					// 	std::cout << std::endl;
-					}
+					// if(idk == 22 || idk ==62){ 
+					//  	std::cout << idk << " (" << ik << ", "<< jk << ", "<< lk << ") | "<< h1 << " " << h2 << " "<< f <<  " = " << 5*h1+5*h2+4*f << std::endl;
+					//  	std::cout << idq1 << "( "<<ft[idq1].re<< ", "<<ft[idq1].im<< " ); " << idq2 <<"( "<<ft[idq2].re<< ", "<<ft[idq2].im<< " ) " << std::endl;
+					//  	std::cout << "("<< iq1 << ", " << jq1 << ", " << lq1 << "); " <<  "("<< inq2 << ", " << jnq2 << ", " << lnq2 << ")" << "| A: " << (5.*(h1+h2)+4.*f)/14.*A << " |  B: " <<(5.*(h1+h2)+4.*f)/14.*B << std::endl;
+					// // 	std::cout << h1 << " "<< h2 << " " << f << ", "<< A << " " << B <<std::endl;
+					// // 	std::cout << std::endl;
+					// }
 
 
 			
@@ -274,11 +305,11 @@ int main(int argc, char *argv[]){
 			if(l<0){ll=res+l;}else{ll=l;}
 			idknew=(ii*res+jj)*res+ll;
 
-			if( fabs(v2[idk].im + v2[idknew].im ) >1e-7 ){
-			std::cout << index << " "<< idk << " " << idknew << " (" << ik << ", " << jk << ", "<< lk << "); (" << iq << ", " << j << ", "<< l<< ") | " <<  v2[idk].im << " " << v2[idknew].im << " "<< fabs(v2[idk].im + v2[idknew].im ) <<std::endl;
-			//std:: cout << index << " "<< idk << " " << idknew << " (" << ik << ", " << jk << ", "<< lk << "); (" << iq << ", " << j << ", "<< l<< ")" << std::endl;
-			//std::cout << std::endl;
-			}
+			// if( fabs(v2[idk].im + v2[idknew].im ) >1e-7 ){
+			// std::cout << index << " "<< idk << " " << idknew << " (" << ik << ", " << jk << ", "<< lk << "); (" << iq << ", " << j << ", "<< l<< ") | " <<  v2[idk].im << " " << v2[idknew].im << " "<< fabs(v2[idk].im + v2[idknew].im ) <<std::endl;
+			// //std:: cout << index << " "<< idk << " " << idknew << " (" << ik << ", " << jk << ", "<< lk << "); (" << iq << ", " << j << ", "<< l<< ")" << std::endl;
+			// //std::cout << std::endl;
+			// }
 			//std:: cout << index << " "<< idk << " " << idknew << " (" << v2[idk].re << ", " << v2[idk].im << "); (" << v2[idknew].re << ", " << v2[idknew].im<< ")" << std::endl;
 			//std::cout << std::endl;
 

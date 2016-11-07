@@ -25,7 +25,7 @@ HDF5FLAGS = #-lhdf5 -D H5_USE_16_API //to turn HDF5 on and off
 #all: delta2p_trunc delta2p_trunc_s0 dtrunc
 #all: dtrunc_opt v2 smo dtrunc_opt3 delta2p
 
-all: delta2pclv
+all: delta2pext
 #all: delta2p delta2pclv hm
 #all: MACdelta2p MACdelta2pclv
 hva: hash_v_array.cpp hash_temp.hpp Makefile
@@ -34,6 +34,8 @@ hm: hash_test.cpp hash_temp.hpp Makefile
 	$(CC) $(CFLAGS) -std=c++11 hash_temp.hpp -o hash_test hash_test.cpp -lm 
 delta2p: delta2part.cpp Makefile
 	$(CC) $(CFLAGS) -o delta2part -L$(LPATH2) -I$(CPATH2) kernels.hpp delta2part.cpp -lrfftw -lfftw -lm -lhdf5 -D H5_USE_16_API
+delta2pext: delta2part_ext.cpp kernels.hpp kernels.cpp stats.hpp stats.cpp Makefile
+	$(CC) $(CFLAGS) -o delta2part_ext -L$(LPATH2) -I$(CPATH2) kernels.cpp stats.cpp delta2part_ext.cpp -lrfftw -lfftw -lm -DDOUBLEPRECISION $(HDF5FLAGS)
 delta2pclv: delta2part_cleverloop.cpp kernels.hpp kernels.cpp stats.hpp stats.cpp Makefile
 	$(CC) $(CFLAGS) -o delta2part_clv -L$(LPATH2) -I$(CPATH2) kernels.cpp stats.cpp delta2part_cleverloop.cpp -lrfftw -lfftw -lm -DDOUBLEPRECISION $(HDF5FLAGS)
 delta2pclv_old: delta2part_cleverloop.cpp kernels.hpp  Makefile
