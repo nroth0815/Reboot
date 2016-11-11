@@ -159,9 +159,9 @@ int main(int argc, char *argv[]){
 		lowj=std::max(jk-r2, -r2);
 		lowl=std::max(lk-r2, -r2);		
 
-		hii=std::min(ik+r2, r2);
-		hij=std::min(jk+r2, r2);
-		hil=std::min(lk+r2, r2);
+		hii=std::min(ik+r2, r2)+1;
+		hij=std::min(jk+r2, r2)+1;
+		hil=std::min(lk+r2, r2)+1;
 
 		if(idk == 22 || idk ==62){std:: cout << idk<< ": "<< lowi << " " << hii << " " << lowj << " " << hij << " " << lowl << " " << hil << std::endl;}
 
@@ -184,8 +184,6 @@ int main(int argc, char *argv[]){
 					if(lnq2<0){llq2=res+lnq2;}else{llq2=lnq2;}		
 
 					idq2=(iiq2*res+jjq2)*res+llq2;
-
-
 
 					//kernels:
 					//f=F(ik,jk,lk,iq1,jq1,lq1);
@@ -210,7 +208,7 @@ int main(int argc, char *argv[]){
 					v2[idk].im+=(5.*(h1+h2)+4.*f)/14.*B;		
 
 					if(idk == 22 || idk ==62){ 
-					 	std::cout << idk << " (" << ik << ", "<< jk << ", "<< lk << ") | "<< h1 << " " << h2 << " "<< f <<  " = " << 5*h1+5*h2+4*f << std::endl;
+					 	std::cout << idk << " (" << ik << ", "<< jk << ", "<< lk << ") | "<< h1 << " " << h2 << " "<< f <<  " = " << (5*h1+5*h2+4*f)/14. << std::endl;
 					 	std::cout << idq1 << "( "<<ft[idq1].re<< ", "<<ft[idq1].im<< " ); " << idq2 <<"( "<<ft[idq2].re<< ", "<<ft[idq2].im<< " ) " << std::endl;
 					 	std::cout << "("<< iq1 << ", " << jq1 << ", " << lq1 << "); " <<  "("<< inq2 << ", " << jnq2 << ", " << lnq2 << ")" << "| A: " << (5.*(h1+h2)+4.*f)/14.*A << " |  B: " <<(5.*(h1+h2)+4.*f)/14.*B << std::endl;
 					// 	std::cout << h1 << " "<< h2 << " " << f << ", "<< A << " " << B <<std::endl;
@@ -275,7 +273,7 @@ int main(int argc, char *argv[]){
 			idknew=(ii*res+jj)*res+ll;
 
 			if( fabs(v2[idk].im + v2[idknew].im ) >1e-7 ){
-			std::cout << index << " "<< idk << " " << idknew << " (" << ik << ", " << jk << ", "<< lk << "); (" << iq << ", " << j << ", "<< l<< ") | " <<  v2[idk].im << " " << v2[idknew].im << " "<< fabs(v2[idk].im + v2[idknew].im ) <<std::endl;
+			std::cout << index << " "<< idk << " " << idknew << " (" << ik << ", " << jk << ", "<< lk << "); (" << iq << ", " << j << ", "<< l<< ") | " <<  v2[idk].im << " " << v2[idknew].im << " "<< fabs(v2[idk].im + v2[idknew].im )<< " | " << v2[idk].re << " " << v2[idknew].re <<std::endl;
 			//std:: cout << index << " "<< idk << " " << idknew << " (" << ik << ", " << jk << ", "<< lk << "); (" << iq << ", " << j << ", "<< l<< ")" << std::endl;
 			//std::cout << std::endl;
 			}

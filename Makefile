@@ -25,9 +25,11 @@ HDF5FLAGS = #-lhdf5 -D H5_USE_16_API //to turn HDF5 on and off
 #all: delta2p_trunc delta2p_trunc_s0 dtrunc
 #all: dtrunc_opt v2 smo dtrunc_opt3 delta2p
 
-all: delta2pext
+all: test
 #all: delta2p delta2pclv hm
 #all: MACdelta2p MACdelta2pclv
+test: test_loop.cc Makefile
+	$(CC) $(CFLAGS) -std=c++11 -o testloop test_loop.cc -lrfftw -lfftw -lm -lgsl -lgslcblas
 hva: hash_v_array.cpp hash_temp.hpp Makefile
 	$(CC) $(CFLAGS) -std=c++11 hash_temp.hpp -o hva hash_v_array.cpp -lm -lgsl -lgslcblas
 hm: hash_test.cpp hash_temp.hpp Makefile
