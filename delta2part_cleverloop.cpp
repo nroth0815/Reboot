@@ -26,8 +26,8 @@ int main(int argc, char *argv[]){
 	int iq2,jq2,lq2,iq,j,l,ii,jj,ll,iiq2,jjq2,llq2;
 
 	int *qarr=(int*)calloc(res*res*res*4,sizeof(int));
-	//int *karr=(int*)calloc(idstop*4,sizeof(int));
-	int *karr=(int*)calloc(res*res*res*4,sizeof(int));
+	int *karr=(int*)calloc(idstop*4,sizeof(int));
+	//int *karr=(int*)calloc(res*res*res*4,sizeof(int));
 
 	const MyFloat R=atof(argv[3]);	
 	const MyFloat Boxsize=atof(argv[5]);
@@ -103,8 +103,8 @@ int main(int argc, char *argv[]){
 		if(iq<0){ii=res+iq;}else{ii=iq;}
 		for(j=-(r2-1);j<r2+1;j++){
 			if(j<0){jj=res+j;}else{jj=j;}		
-			//for(l=0;l<r2+1;l++){
-			for(l=-(r2-1);l<r2+1;l++){
+			for(l=0;l<r2+1;l++){
+			//for(l=-(r2-1);l<r2+1;l++){
 				if(l<0){ll=res+l;}else{ll=l;}
 				
 				idk=(ii*(res)+jj)*(res)+ll;		
@@ -143,7 +143,7 @@ int main(int argc, char *argv[]){
 	clock_t t0, t1;
 	t0=clock();
 
-	idstopn=res*res*res;
+	//idstopn=res*res*res;
 	//part=15;
 
 	for(id=idstart;id<idstopn;id++){
@@ -171,7 +171,7 @@ int main(int argc, char *argv[]){
 		// hij=std::min(jk+r2, r2)+1;
 		// hil=std::min(lk+r2, r2)+1;
 
-		if(idk == 22 || idk ==62){std:: cout << idk<< ": "<< lowi << " " << hii << " " << lowj << " " << hij << " " << lowl << " " << hil << std::endl;}
+		//if(idk == 22 || idk ==62){std:: cout << idk<< ": "<< lowi << " " << hii << " " << lowj << " " << hij << " " << lowl << " " << hil << std::endl;}
 
 		for(iq1 = lowi; iq1<hii; iq1++){
 			if(iq1<0){iiq1=res+iq1;}else{iiq1=iq1;}
@@ -188,22 +188,20 @@ int main(int argc, char *argv[]){
 					lq2=lk-lq1;
 					if(lq2<0){llq2=res+lq2;}else{llq2=lq2;}									
 
-					idq1=(iiq1*res+jjq1)*res+llq1;				
-
-					if(iq2<-r2+1){iqn2=res+iq2;}else if(iq2>r2+1){iqn2=iq2-res;}else{iqn2=iq2;} //never goes > res-1, so two conditions are enough
-					if(jq2<-r2+1){jqn2=res+jq2;}else if(jq2>r2+1){jqn2=jq2-res;}else{jqn2=jq2;}
-					if(lq2<-r2+1){lqn2=res+lq2;}else if(lq2>r2+1){lqn2=lq2-res;}else{lqn2=lq2;}		
-
+					idq1=(iiq1*res+jjq1)*res+llq1;					
 					idq2=(iiq2*res+jjq2)*res+llq2;
 
 					//kernels:
-					// f=beta(iq1,jq1,lq1,iq2,jq2,lq2);
-					// h1=alpha(ik,jk,lk,iq1,jq1,lq1);
-					// h2=alpha(ik,jk,lk,iq2,jq2,lq2);
-					
-					 f=beta(iq1,jq1,lq1,iqn2,jqn2,lqn2);
+					 f=beta(iq1,jq1,lq1,iq2,jq2,lq2);
 					 h1=alpha(ik,jk,lk,iq1,jq1,lq1);
-					 h2=alpha(ik,jk,lk,iqn2,jqn2,lqn2);
+					 h2=alpha(ik,jk,lk,iq2,jq2,lq2);
+					
+					 // if(iq2<-r2+1){iqn2=res+iq2;}else if(iq2>r2+1){iqn2=iq2-res;}else{iqn2=iq2;} //never goes > res-1, so two conditions are enough
+					 // if(jq2<-r2+1){jqn2=res+jq2;}else if(jq2>r2+1){jqn2=jq2-res;}else{jqn2=jq2;}
+					 // if(lq2<-r2+1){lqn2=res+lq2;}else if(lq2>r2+1){lqn2=lq2-res;}else{lqn2=lq2;}		
+					 // f=beta(iq1,jq1,lq1,iqn2,jqn2,lqn2);
+					 // h1=alpha(ik,jk,lk,iq1,jq1,lq1);
+					 // h2=alpha(ik,jk,lk,iqn2,jqn2,lqn2);
 					
 					//f=1.;
 					//h1=1.;
