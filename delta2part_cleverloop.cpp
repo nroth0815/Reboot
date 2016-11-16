@@ -23,7 +23,7 @@ int main(int argc, char *argv[]){
 
 	int ik,jk,lk,iq1,jq1,lq1;//,iq2,jq2,lq2;
 	size_t idk,idq1,idq2,id,idknew, i, index=0;
-	int inq2,jnq2,lnq2,iq,j,l,ii,jj,ll,iiq2,jjq2,llq2;
+	int iq2,jq2,lq2,iq,j,l,ii,jj,ll,iiq2,jjq2,llq2;
 
 	int *qarr=(int*)calloc(res*res*res*4,sizeof(int));
 	//int *karr=(int*)calloc(idstop*4,sizeof(int));
@@ -67,13 +67,13 @@ int main(int argc, char *argv[]){
 
 	const std::string d2file=argv[1];
 
-	MyFloat *in=(MyFloat*)calloc(2*res*res*res,sizeof(MyFloat));
+	MyFloat *in=(MyFloat*)calloc(res*res*res,sizeof(MyFloat));
 	std::ifstream d2str(d2file.c_str());
     if (d2str.fail()) {
     	std::cerr << "unable to open file "<<d2file.c_str()<< " for reading" << std::endl;
         exit(1);
     }
-    for(i=0;i<res*res*res*2;i++){d2str>>in[i];}
+    for(i=0;i<res*res*res;i++){d2str>>in[i];}
     d2str.close();
 
 	//fftw_complex *ft = (fftw_complex*)calloc(res*res*res,sizeof(fftw_complex));
@@ -81,7 +81,7 @@ int main(int argc, char *argv[]){
 
 	//normalise for fftw
 	fftw_complex *arr2 = (fftw_complex*)calloc(res*res*res,sizeof(fftw_complex));
-	for(i=0;i<res*res*res;i++){arr2[i].re=in[i]; } ///pow(res,3.0);}//std::cout<<arr[i]*arr[i]<<std::endl;} 
+	for(i=0;i<res*res*res;i++){arr2[i].re=in[i]/pow(res,3.0);}// std::cout<<in[i]*in[i]<<std::endl; } ///pow(res,3.0);}//std::cout<<arr[i]*arr[i]<<std::endl;} 
 
 	//calculate fftw
 	fftw_complex *ft = (fftw_complex*)calloc(res*res*res,sizeof(fftw_complex));
@@ -138,7 +138,7 @@ int main(int argc, char *argv[]){
 	std::cerr<<"beginning loop"<<std::endl;
 
 	int lowi, lowj, lowl, hii, hij, hil;
-	int iiq1, jjq1, llq1;
+	int iiq1, jjq1, llq1, iqn2, jqn2, lqn2;
 
 	clock_t t0, t1;
 	t0=clock();
@@ -155,46 +155,63 @@ int main(int argc, char *argv[]){
 
 		//std::cout << id << " " << idk << std::endl;
 
-		lowi=std::max(ik-r2, -r2);
-		lowj=std::max(jk-r2, -r2);
-		lowl=std::max(lk-r2, -r2);		
+		lowi=-r2+1;
+		lowj=-r2+1;
+		lowl=-r2+1;		
 
-		hii=std::min(ik+r2, r2)+1;
-		hij=std::min(jk+r2, r2)+1;
-		hil=std::min(lk+r2, r2)+1;
+		hii=r2+1;
+		hij=r2+1;
+		hil=r2+1;
+
+		// lowi=std::max(ik-r2, -r2);
+		// lowj=std::max(jk-r2, -r2);
+		// lowl=std::max(lk-r2, -r2);		
+
+		// hii=std::min(ik+r2, r2)+1;
+		// hij=std::min(jk+r2, r2)+1;
+		// hil=std::min(lk+r2, r2)+1;
 
 		if(idk == 22 || idk ==62){std:: cout << idk<< ": "<< lowi << " " << hii << " " << lowj << " " << hij << " " << lowl << " " << hil << std::endl;}
 
 		for(iq1 = lowi; iq1<hii; iq1++){
+			if(iq1<0){iiq1=res+iq1;}else{iiq1=iq1;}
+			iq2=ik-iq1;
+			if(iq2<0){iiq2=res+iq2;}else{iiq2=iq2;} //never goes > res-1, so two conditions are enough
+			
 			for(jq1 = lowj; jq1<hij; jq1++){
-				for(lq1 = lowl; lq1<hil; lq1++){	
+				if(jq1<0){jjq1=res+jq1;}else{jjq1=jq1;}
+				jq2=jk-jq1;
+				if(jq2<0){jjq2=res+jq2;}else{jjq2=jq2;}
 
-					inq2=ik-iq1; 
-					jnq2=jk-jq1; 
-					lnq2=lk-lq1; 
-
-					if(iq1<0){iiq1=res+iq1;}else{iiq1=iq1;}
-					if(jq1<0){jjq1=res+jq1;}else{jjq1=jq1;}
+				for(lq1 = lowl; lq1<hil; lq1++){
 					if(lq1<0){llq1=res+lq1;}else{llq1=lq1;}
+					lq2=lk-lq1;
+					if(lq2<0){llq2=res+lq2;}else{llq2=lq2;}									
 
-					idq1=(iiq1*res+jjq1)*res+llq1;
+					idq1=(iiq1*res+jjq1)*res+llq1;				
 
-					if(inq2<0){iiq2=res+inq2;}else{iiq2=inq2;}
-					if(jnq2<0){jjq2=res+jnq2;}else{jjq2=jnq2;}
-					if(lnq2<0){llq2=res+lnq2;}else{llq2=lnq2;}		
+					if(iq2<-r2+1){iqn2=res+iq2;}else if(iq2>r2+1){iqn2=iq2-res;}else{iqn2=iq2;} //never goes > res-1, so two conditions are enough
+					if(jq2<-r2+1){jqn2=res+jq2;}else if(jq2>r2+1){jqn2=jq2-res;}else{jqn2=jq2;}
+					if(lq2<-r2+1){lqn2=res+lq2;}else if(lq2>r2+1){lqn2=lq2-res;}else{lqn2=lq2;}		
 
 					idq2=(iiq2*res+jjq2)*res+llq2;
 
 					//kernels:
-					//f=F(ik,jk,lk,iq1,jq1,lq1);
-					f=beta(iq1,jq1,lq1,inq2,jnq2,lnq2);
+					// f=beta(iq1,jq1,lq1,iq2,jq2,lq2);
+					// h1=alpha(ik,jk,lk,iq1,jq1,lq1);
+					// h2=alpha(ik,jk,lk,iq2,jq2,lq2);
+					
+					 f=beta(iq1,jq1,lq1,iqn2,jqn2,lqn2);
+					 h1=alpha(ik,jk,lk,iq1,jq1,lq1);
+					 h2=alpha(ik,jk,lk,iqn2,jqn2,lqn2);
+					
 					//f=1.;
-					//h1=H(ik,jk,lk,iq1,jq1,lq1);
-					//h2=H(ik,jk,lk,inq2,jnq2,lnq2);
-					h1=alpha(ik,jk,lk,iq1,jq1,lq1);
-					h2=alpha(ik,jk,lk,inq2,jnq2,lnq2);
 					//h1=1.;
 					//h2=1.;
+
+					//f=qarr[idk];
+					//h1=qarr[idq1];
+					//h2=qarr[idq2];
 
 					d1re=(MyFloat)ft[idq1].re;
 					d2re=(MyFloat)ft[idq2].re;
@@ -207,13 +224,13 @@ int main(int argc, char *argv[]){
 					B=d2re*d1im+d1re*d2im;
 					v2[idk].im+=(5.*(h1+h2)+4.*f)/14.*B;		
 
-					if(idk == 22 || idk ==62){ 
-					 	std::cout << idk << " (" << ik << ", "<< jk << ", "<< lk << ") | "<< h1 << " " << h2 << " "<< f <<  " = " << (5*h1+5*h2+4*f)/14. << std::endl;
-					 	std::cout << idq1 << "( "<<ft[idq1].re<< ", "<<ft[idq1].im<< " ); " << idq2 <<"( "<<ft[idq2].re<< ", "<<ft[idq2].im<< " ) " << std::endl;
-					 	std::cout << "("<< iq1 << ", " << jq1 << ", " << lq1 << "); " <<  "("<< inq2 << ", " << jnq2 << ", " << lnq2 << ")" << "| A: " << (5.*(h1+h2)+4.*f)/14.*A << " |  B: " <<(5.*(h1+h2)+4.*f)/14.*B << std::endl;
-					// 	std::cout << h1 << " "<< h2 << " " << f << ", "<< A << " " << B <<std::endl;
-					// 	std::cout << std::endl;
-					}
+					// if(idk == 22 || idk ==62){ 
+					//  	std::cout << idk << " (" << ik << ", "<< jk << ", "<< lk << ") | "<< h1 << " " << h2 << " "<< f <<  " = " << (5*h1+5*h2+4*f)/14. << std::endl;
+					//  	std::cout << idq1 << "( "<<ft[idq1].re<< ", "<<ft[idq1].im<< " ); " << idq2 <<"( "<<ft[idq2].re<< ", "<<ft[idq2].im<< " ) " << std::endl;
+					//  	std::cout << "("<< iq1 << ", " << jq1 << ", " << lq1 << "); " <<  "("<< inq2 << ", " << jnq2 << ", " << lnq2 << ")" << "| A: " << (5.*(h1+h2)+4.*f)/14.*A << " |  B: " <<(5.*(h1+h2)+4.*f)/14.*B << std::endl;
+					// // 	std::cout << h1 << " "<< h2 << " " << f << ", "<< A << " " << B <<std::endl;
+					// // 	std::cout << std::endl;
+					// }
 
 
 			
@@ -233,13 +250,13 @@ int main(int argc, char *argv[]){
 
 
 	if(part==0){//symmetrize missing values only if all parts are calculated
-		 // v2[r2].im=0.;
-		 // v2[r2*res].im=0;
-		 // v2[r2*res+r2].im=0;
-		 // v2[r2*res*res].im=0;
-		 // v2[r2*res*res+r2].im=0;
-		 // v2[(r2*res+r2)*res].im=0;
-		 // v2[(r2*res+r2)*res+r2].im=0;
+		 v2[r2].im=0.;
+		 v2[r2*res].im=0;
+		 v2[r2*res+r2].im=0;
+		 v2[r2*res*res].im=0;
+		 v2[r2*res*res+r2].im=0;
+		 v2[(r2*res+r2)*res].im=0;
+		 v2[(r2*res+r2)*res+r2].im=0;
 		int index2=0;
 		//std:: cout << (res*res*res)-idstopn << std::endl;
 		for(index=0;index<idstop;index++){ //index=0 is dealt with below
@@ -272,21 +289,21 @@ int main(int argc, char *argv[]){
 			if(l<0){ll=res+l;}else{ll=l;}
 			idknew=(ii*res+jj)*res+ll;
 
-			if( fabs(v2[idk].im + v2[idknew].im ) >1e-7 ){
-			std::cout << index << " "<< idk << " " << idknew << " (" << ik << ", " << jk << ", "<< lk << "); (" << iq << ", " << j << ", "<< l<< ") | " <<  v2[idk].im << " " << v2[idknew].im << " "<< fabs(v2[idk].im + v2[idknew].im )<< " | " << v2[idk].re << " " << v2[idknew].re <<std::endl;
+			//if( fabs(v2[idk].im + v2[idknew].im ) >1e-7 ){
+			//std::cout << index << " "<< idk << " " << idknew << " (" << ik << ", " << jk << ", "<< lk << "); (" << iq << ", " << j << ", "<< l<< ") | " <<  v2[idk].im << " " << v2[idknew].im << " "<< fabs(v2[idk].im + v2[idknew].im )<< " | " << v2[idk].re << " " << v2[idknew].re <<std::endl;
 			//std:: cout << index << " "<< idk << " " << idknew << " (" << ik << ", " << jk << ", "<< lk << "); (" << iq << ", " << j << ", "<< l<< ")" << std::endl;
 			//std::cout << std::endl;
-			}
+			//}
 			//std:: cout << index << " "<< idk << " " << idknew << " (" << v2[idk].re << ", " << v2[idk].im << "); (" << v2[idknew].re << ", " << v2[idknew].im<< ")" << std::endl;
 			//std::cout << std::endl;
 
-			//v2[idknew].re=v2[idk].re;
-			//v2[idknew].im=-v2[idk].im;
+			v2[idknew].re=v2[idk].re;
+			v2[idknew].im=-v2[idk].im;
 		
 		}
 
-		//v2[0].re=0.; //enforce the mean 0 condition (already fine up to numerical accuracy anyway)
-		//v2[0].im=0.;
+		v2[0].re=0.; //enforce the mean 0 condition (already fine up to numerical accuracy anyway)
+		v2[0].im=0.;
 
 		output=arg0+"_"+argv[2]+"_"+argv[4]+argv[5]+"_"+argv[3]+"_real.txt";
 		output2=arg0+"_"+argv[2]+"_"+argv[4]+argv[5]+"_"+argv[3]+"_kspace.txt";

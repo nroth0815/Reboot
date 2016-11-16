@@ -25,7 +25,7 @@ HDF5FLAGS = #-lhdf5 -D H5_USE_16_API //to turn HDF5 on and off
 #all: delta2p_trunc delta2p_trunc_s0 dtrunc
 #all: dtrunc_opt v2 smo dtrunc_opt3 delta2p
 
-all: test
+all: delta2pclv
 #all: delta2p delta2pclv hm
 #all: MACdelta2p MACdelta2pclv
 test: test_loop.cc Makefile
