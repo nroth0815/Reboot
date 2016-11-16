@@ -1,2 +1,4 @@
 *grind*
 *.pyc
+*.hdf5
+*.dat
